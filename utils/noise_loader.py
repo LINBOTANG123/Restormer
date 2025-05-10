@@ -1,0 +1,234 @@
+import numpy as np
+import scipy.io as sio
+import h5py
+
+def process_noise_kspace_to_img(kspace_2d):
+    """
+    IFFT-based conversion of a 2D k-space noise slice into a magnitude image.
+    Steps:
+      1) ifftshift
+      2) 2D IFFT
+      3) fftshift
+      4) magnitude extraction
+    Returns:
+        np.float32 magnitude image of same shape as input.
+    """
+    shifted = np.fft.ifftshift(kspace_2d)
+    img_complex = np.fft.ifft2(shifted)
+    img_complex = np.fft.fftshift(img_complex)
+    return np.abs(img_complex).astype(np.float32)
+
+
+def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
+    """
+    Load pure-noise k-space from a .mat or HDF5 file and convert to image-space.
+
+    Supports multiple formats:
+    - 'Hwihun_phantom', 'b1000', 'C':
+        Expect a dataset with shape (H, W, num_coils, noise_slices) under key 'k_gc'.
+    - 'gslider':
+        Expect a dataset with shape (num_coils, noise_slices, H, W) under key 'image'.
+
+    Parameters
+    ----------
+    mat_path : str
+        Path to the .mat or HDF5 file containing noise k-space.
+    key : str
+        Dataset key inside the file.
+    data_format : {'Hwihun_phantom', 'b1000', 'C', 'gslider'}
+        Format of the stored noise. Use 'gslider' for the new pure-noise version.
+
+    Returns
+    -------
+    noise_imgspace : np.ndarray, shape (H, W, num_coils, noise_slices)
+        The magnitude images of pure noise, ready for replication or mapping.
+    """
+    # 1) Load raw data
+    if h5py.is_hdf5(mat_path):
+        with h5py.File(mat_path, 'r') as f:
+            if key not in f:
+                raise KeyError(f"Key '{key}' not found in {mat_path}")
+            raw = f[key][()]
+    else:
+        mat = sio.loadmat(mat_path)
+        if key not in mat:
+            raise KeyError(f"Key '{key}' not found in {mat_path}")
+        raw = mat[key]
+
+    # 2) Handle MATLAB complex void dtype
+    if raw.dtype.kind == 'V':
+        fields = raw.dtype.names or []
+        if set(['real', 'imag']).issubset(fields):
+            raw = raw['real'] + 1j * raw['imag']
+        else:
+            raw = raw[fields[0]]
+
+    # 3) Reorder per format
+    if data_format in ['Hwihun_phantom', 'b1000', 'C']:
+        # Expect raw shape: (H, W, num_coils, noise_slices)
+        data = raw
+    elif data_format == 'gslider':
+        # Expect raw shape: (num_coils, noise_slices, H, W)
+        if raw.ndim != 4:
+            raise ValueError(f"Expected 4D noise for 'gslider', got {raw.shape}")
+        num_coils, noise_slices, H, W = raw.shape
+        # Transpose to (H, W, coils, slices)
+        data = np.transpose(raw, (2, 3, 0, 1))
+    else:
+        raise ValueError(f"Unrecognized data_format: {data_format}")
+
+    # 4) Validate output dims
+    if data.ndim != 4:
+        raise ValueError(f"After reorder, expected 4D array, got {data.shape}")
+    H, W, num_coils, noise_slices = data.shape
+
+    # 5) Convert each k-space slice to magnitude image
+    noise_imgspace = np.empty((H, W, num_coils, noise_slices), dtype=np.float32)
+    for c in range(num_coils):
+        for s in range(noise_slices):
+            noise_imgspace[:, :, c, s] = process_noise_kspace_to_img(data[:, :, c, s])
+
+    return noise_imgspace
+
+def replicate_noise_map_with_sampling(noise_imgspace, target_H, target_W, target_slices):
+    """
+    Replicate noise maps to match the target spatial and slice dimensions,
+    taking into account that the original noise exhibits a column-wise pattern,
+    where the middle columns have higher noise. This version embeds the original
+    noise map in the center and pads the left/right sides as before, and for 
+    the row padding (upper and lower), it samples values in a column-wise manner,
+    so that each column's statistics are preserved.
+    
+    Input:
+        noise_imgspace: np.ndarray of shape (H_noise, W_noise, num_coils, noise_slices)
+    
+    Output:
+        expanded_noise: np.ndarray of shape (target_H, target_W, num_coils, target_slices)
+    """
+    H_noise, W_noise, num_coils, noise_slices = noise_imgspace.shape
+    expanded_noise = np.zeros((target_H, target_W, num_coils, target_slices), dtype=np.float32)
+    
+    num_edge = 10  # Number of rows/columns to use for computing edge statistics
+
+    # Loop over each coil.
+    for coil in range(num_coils):
+        # Get noise for this coil: shape (H_noise, W_noise, noise_slices)
+        coil_noise = noise_imgspace[:, :, coil, :]
+        
+        # Global statistics for slice replication (if needed)
+        global_samples = coil_noise.reshape(-1)
+        global_mu = np.mean(global_samples)
+        global_sigma = np.std(global_samples)
+        
+        padded_slices = []
+        # Process each slice individually.
+        for s in range(noise_slices):
+            noise_map = coil_noise[:, :, s]  # shape: (H_noise, W_noise)
+
+            # --- Row Padding (Upper and Lower) with Column-wise Stats ---
+            pad_h = target_H - H_noise
+            pad_top = pad_h // 2
+            pad_bottom = pad_h - pad_top
+
+            # Pad top rows: for each column, sample based on that column's top edge.
+            if pad_top > 0:
+                top_pad = np.empty((pad_top, noise_map.shape[1]), dtype=np.float32)
+                for j in range(noise_map.shape[1]):
+                    n_edge = min(num_edge, noise_map.shape[0])
+                    col_top = noise_map[:n_edge, j]
+                    mu = np.mean(col_top)
+                    sigma = np.std(col_top)
+                    top_pad[:, j] = np.random.normal(mu, sigma, size=(pad_top,))
+                noise_map = np.vstack([top_pad, noise_map])
+            
+            # Pad bottom rows: for each column, sample based on that column's bottom edge.
+            if pad_bottom > 0:
+                bottom_pad = np.empty((pad_bottom, noise_map.shape[1]), dtype=np.float32)
+                for j in range(noise_map.shape[1]):
+                    n_edge = min(num_edge, noise_map.shape[0])
+                    col_bottom = noise_map[-n_edge:, j]
+                    mu = np.mean(col_bottom)
+                    sigma = np.std(col_bottom)
+                    bottom_pad[:, j] = np.random.normal(mu, sigma, size=(pad_bottom,))
+                noise_map = np.vstack([noise_map, bottom_pad])
+            # Now, noise_map has shape (target_H, W_noise)
+
+            # --- Column Padding (Left and Right) ---
+            pad_w = target_W - W_noise
+            if pad_w > 0:
+                pad_left = pad_w // 2
+                pad_right = pad_w - pad_left
+                
+                left_edge = noise_map[:, :min(num_edge, noise_map.shape[1])]
+                left_mu = np.mean(left_edge, axis=1)  # per row
+                left_sigma = np.std(left_edge, axis=1)
+                left_pad = np.empty((noise_map.shape[0], pad_left), dtype=np.float32)
+                for i in range(noise_map.shape[0]):
+                    left_pad[i, :] = np.random.normal(left_mu[i], left_sigma[i], size=(pad_left,))
+                
+                right_edge = noise_map[:, -min(num_edge, noise_map.shape[1]):]
+                right_mu = np.mean(right_edge, axis=1)
+                right_sigma = np.std(right_edge, axis=1)
+                right_pad = np.empty((noise_map.shape[0], pad_right), dtype=np.float32)
+                for i in range(noise_map.shape[0]):
+                    right_pad[i, :] = np.random.normal(right_mu[i], right_sigma[i], size=(pad_right,))
+                
+                new_noise_map = np.hstack([left_pad, noise_map, right_pad])
+            elif pad_w < 0:
+                crop_start = (W_noise - target_W) // 2
+                new_noise_map = noise_map[:, crop_start:crop_start+target_W]
+            else:
+                new_noise_map = noise_map
+            
+            new_noise_map = new_noise_map[:target_H, :target_W]
+            padded_slices.append(new_noise_map)
+        
+        padded_slices = np.stack(padded_slices, axis=2)  # shape: (target_H, target_W, noise_slices)
+        
+        if target_slices <= noise_slices:
+            final_maps = padded_slices[:, :, :target_slices]
+        else:
+            final_maps = np.zeros((target_H, target_W, target_slices), dtype=np.float32)
+            final_maps[:, :, :noise_slices] = padded_slices
+            remaining = target_slices - noise_slices
+            extra_slices = np.random.normal(global_mu, global_sigma, size=(target_H, target_W, remaining))
+            final_maps[:, :, noise_slices:] = extra_slices
+        
+        expanded_noise[:, :, coil, :] = final_maps
+
+    return expanded_noise
+
+if __name__ == "__main__":
+    import argparse
+    import os
+    import nibabel as nib
+
+    parser = argparse.ArgumentParser(
+        description="Load pure-noise k-space, convert via IFFT, and save as 4D NIfTI."
+    )
+    parser.add_argument("mat_path", help="Path to .mat or HDF5 file containing noise data")
+    parser.add_argument("--key", default="k_gc", help="Dataset key in the file")
+    parser.add_argument(
+        "--format", dest="data_format", default="b1000",
+        choices=["Hwihun_phantom","b1000","C","gslider"],
+        help="Data format of noise ('gslider' uses key 'image')"
+    )
+    parser.add_argument(
+        "--output", "-o", default="noise.nii",
+        help="Filename for output NIfTI"
+    )
+    args = parser.parse_args()
+
+    print(f"Loading noise data from {args.mat_path!r} (key={args.key}, format={args.data_format})...")
+    noise_img = load_noise_data(
+        mat_path=args.mat_path,
+        key=args.key,
+        data_format=args.data_format
+    )
+    print("Noise image-space shape:", noise_img.shape)
+
+    # Save as NIfTI (4D)
+    affine = np.eye(4)
+    nii = nib.Nifti1Image(noise_img.astype(np.float32), affine)
+    nib.save(nii, args.output)
+    print(f"Saved noise NIfTI to {args.output}")

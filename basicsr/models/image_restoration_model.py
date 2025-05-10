@@ -4,6 +4,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from os import path as osp
 from tqdm import tqdm
+import nibabel as nib
 
 from basicsr.models.archs import define_network
 from basicsr.models.base_model import BaseModel
@@ -18,6 +19,36 @@ import numpy as np
 import cv2
 import torch.nn.functional as F
 from functools import partial
+
+def combine_coils_rss(coil_tensor):
+    # Assume coil_tensor is a numpy array of shape (32, H, W)
+    combined = np.sqrt(np.sum(np.square(coil_tensor), axis=0))
+    # Normalize to [0, 1] if necessary
+    combined = (combined - combined.min()) / (combined.max() - combined.min() + 1e-8)
+    return combined
+
+def psd_loss(residual, noise_map):
+    """
+    Compute the power spectral density (PSD) loss between the residual and noise map.
+    
+    Args:
+        residual (Tensor): Estimated noise (shape: [B, C, H, W]).
+        noise_map (Tensor): Ground truth noise map (shape: [B, C, H, W]).
+        
+    Returns:
+        loss (Tensor): The L1 loss between the PSDs.
+    """
+    # Compute the FFT
+    res_fft = torch.fft.fft2(residual)
+    noise_fft = torch.fft.fft2(noise_map)
+    
+    # Compute the power spectral densities (magnitude squared)
+    res_psd = torch.abs(res_fft) ** 2
+    noise_psd = torch.abs(noise_fft) ** 2
+    
+    # Compute the L1 loss between the PSDs
+    loss = F.l1_loss(res_psd, noise_psd)
+    return loss
 
 class Mixing_Augment:
     def __init__(self, mixup_beta, use_identity, device):
@@ -155,11 +186,10 @@ class ImageCleanModel(BaseModel):
         self.output = preds[-1]
 
         loss_dict = OrderedDict()
-        # pixel loss
+        # Pixel loss
         l_pix = 0.
         for pred in preds:
             l_pix += self.cri_pix(pred, self.gt)
-
         loss_dict['l_pix'] = l_pix
 
         l_pix.backward()
@@ -171,6 +201,131 @@ class ImageCleanModel(BaseModel):
 
         if self.ema_decay > 0:
             self.model_ema(decay=self.ema_decay)
+
+        # # -----------------------
+        # # Save visualization images at set intervals.
+        # # -----------------------
+        # vis_interval = self.opt['train'].get('visualization_interval', 100000)
+        # if current_iter % vis_interval == 0:
+        #     # --- 1. RSS Visualizations ---
+        #     # self.lq shape: [B, 64, H, W]
+        #     # First 32 channels: LR MRI images, last 32 channels: noise maps.
+        #     lr_input = self.lq[:, :32, :, :]   # [B, 32, H, W]
+        #     noise_map = self.lq[:, 32:, :, :]    # [B, 32, H, W]
+        #     # Combine coils using RSS (per sample) to form a single image:
+        #     lr_combined = torch.sqrt(torch.sum(lr_input ** 2, dim=1, keepdim=True))       # [B, 1, H, W]
+        #     noise_combined = torch.sqrt(torch.sum(noise_map ** 2, dim=1, keepdim=True))     # [B, 1, H, W]
+
+        #     # --- Combine the ground truth and prediction ---
+        #     # Both self.gt and self.output have shape: [B, 32, H, W]
+        #     gt_combined = torch.sqrt(torch.sum(self.gt ** 2, dim=1, keepdim=True))          # [B, 1, H, W]
+        #     pred_combined = torch.sqrt(torch.sum(self.output ** 2, dim=1, keepdim=True))      # [B, 1, H, W]
+
+        #     # For visualization, select the first sample in the batch.
+        #     lr_vis = lr_combined[0]      # shape: [1, H, W]
+        #     noise_vis = noise_combined[0]
+        #     gt_vis = gt_combined[0]
+        #     pred_vis = pred_combined[0]
+
+        #     # Replicate the single channel to 3 channels for tensor2img.
+        #     lr_vis = lr_vis.repeat(3, 1, 1)        # shape: [3, H, W]
+        #     noise_vis = noise_vis.repeat(3, 1, 1)
+        #     gt_vis = gt_vis.repeat(3, 1, 1)
+        #     pred_vis = pred_vis.repeat(3, 1, 1)
+
+        #     # Convert to numpy images using tensor2img.
+        #     lr_img_np = tensor2img(lr_vis, rgb2bgr=False)
+        #     noise_img_np = tensor2img(noise_vis, rgb2bgr=False)
+        #     gt_img_np = tensor2img(gt_vis, rgb2bgr=False)
+        #     pred_img_np = tensor2img(pred_vis, rgb2bgr=False)
+
+        #     # Construct save paths.
+        #     vis_dir = self.opt['path'].get('visualization', './visualization')
+        #     os.makedirs(vis_dir, exist_ok=True)
+        #     lr_save_path = os.path.join(vis_dir, f"iter_{current_iter}_lr.png")
+        #     noise_save_path = os.path.join(vis_dir, f"iter_{current_iter}_noise.png")
+        #     gt_save_path = os.path.join(vis_dir, f"iter_{current_iter}_gt.png")
+        #     pred_save_path = os.path.join(vis_dir, f"iter_{current_iter}_pred.png")
+
+        #     # Save RSS images.
+        #     imwrite(lr_img_np, lr_save_path)
+        #     imwrite(noise_img_np, noise_save_path)
+        #     imwrite(gt_img_np, gt_save_path)
+        #     imwrite(pred_img_np, pred_save_path)
+
+        #     # -----------------------
+        #     # 2. Separate Coil Visualizations (without RSS)
+        #     # -----------------------
+        #     # For the first sample in the batch, save the individual coil images as a grid.
+        #     lr_separate = self.lq[0, :32, :, :].unsqueeze(1)    # [32, 1, H, W]
+        #     noise_separate = self.lq[0, 32:, :, :].unsqueeze(1)   # [32, 1, H, W]
+        #     gt_separate = self.gt[0].unsqueeze(1)                 # [32, 1, H, W]
+        #     pred_separate = self.output[0].unsqueeze(1)           # [32, 1, H, W]
+
+        #     lr_sep_img = tensor2img(lr_separate, rgb2bgr=False)
+        #     noise_sep_img = tensor2img(noise_separate, rgb2bgr=False)
+        #     gt_sep_img = tensor2img(gt_separate, rgb2bgr=False)
+        #     pred_sep_img = tensor2img(pred_separate, rgb2bgr=False)
+
+        #     lr_sep_save_path = os.path.join(vis_dir, f"iter_{current_iter}_lr_sep.png")
+        #     noise_sep_save_path = os.path.join(vis_dir, f"iter_{current_iter}_noise_sep.png")
+        #     gt_sep_save_path = os.path.join(vis_dir, f"iter_{current_iter}_gt_sep.png")
+        #     pred_sep_save_path = os.path.join(vis_dir, f"iter_{current_iter}_pred_sep.png")
+
+        #     imwrite(lr_sep_img, lr_sep_save_path)
+        #     imwrite(noise_sep_img, noise_sep_save_path)
+        #     imwrite(gt_sep_img, gt_sep_save_path)
+        #     imwrite(pred_sep_img, pred_sep_save_path)
+
+        #     # -----------------------
+        #     # 3. Residual Visualizations (Noisy - Prediction)
+        #     # -----------------------
+        #     # Calculate the residual between the noisy input (first 32 channels) and the prediction.
+        #     residual = lr_input - self.output  # [B, 32, H, W]
+
+        #     # RSS residual: combine coil residuals via RSS.
+        #     residual_rss = torch.sqrt(torch.sum(residual ** 2, dim=1, keepdim=True))  # [B, 1, H, W]
+        #     residual_rss_vis = residual_rss[0].repeat(3, 1, 1)  # replicate to 3 channels
+
+        #     # Convert and save the RSS residual image.
+        #     residual_rss_img_np = tensor2img(residual_rss_vis, rgb2bgr=False)
+        #     residual_rss_save_path = os.path.join(vis_dir, f"iter_{current_iter}_residual_rss.png")
+        #     imwrite(residual_rss_img_np, residual_rss_save_path)
+
+        #     # Separate residual: show each coil's residual as a grid for the first sample.
+        #     residual_sep = residual[0].unsqueeze(1)  # [32, 1, H, W]
+        #     residual_sep_img = tensor2img(residual_sep, rgb2bgr=False)
+        #     residual_sep_save_path = os.path.join(vis_dir, f"iter_{current_iter}_residual_sep.png")
+        #     imwrite(residual_sep_img, residual_sep_save_path)
+
+        #     # -----------------------
+        #     # 4. Save 4D NIfTI Volumes (Noisy, Prediction, Residual)
+        #     # -----------------------
+        #     # For the first sample in the batch:
+        #     # Noisy input: shape [32, H, W] from the first 32 channels.
+        #     noisy_4d = self.lq[0, :32, :, :].detach().cpu().numpy()   # [32, H, W]
+        #     pred_4d = self.output[0].detach().cpu().numpy()            # [32, H, W]
+        #     residual_4d = noisy_4d - pred_4d                            # [32, H, W]
+
+        #     # Rearrange to [H, W, 32] for NIfTI storage.
+        #     noisy_4d = np.transpose(noisy_4d, (1, 2, 0))
+        #     pred_4d = np.transpose(pred_4d, (1, 2, 0))
+        #     residual_4d = np.transpose(residual_4d, (1, 2, 0))
+
+        #     # Create NIfTI images (using identity affine; adjust if necessary)
+        #     noisy_nii = nib.Nifti1Image(noisy_4d, np.eye(4))
+        #     pred_nii = nib.Nifti1Image(pred_4d, np.eye(4))
+        #     residual_nii = nib.Nifti1Image(residual_4d, np.eye(4))
+
+        #     # Construct NIfTI save paths.
+        #     noisy_nii_path = os.path.join(vis_dir, f"iter_{current_iter}_noisy.nii.gz")
+        #     pred_nii_path = os.path.join(vis_dir, f"iter_{current_iter}_pred.nii.gz")
+        #     residual_nii_path = os.path.join(vis_dir, f"iter_{current_iter}_residual.nii.gz")
+
+        #     nib.save(noisy_nii, noisy_nii_path)
+        #     nib.save(pred_nii, pred_nii_path)
+        #     nib.save(residual_nii, residual_nii_path)
+
 
     def pad_test(self, window_size):        
         scale = self.opt.get('scale', 1)
@@ -210,19 +365,14 @@ class ImageCleanModel(BaseModel):
         else:
             return 0.
 
-    def nondist_validation(self, dataloader, current_iter, tb_logger,
-                           save_img, rgb2bgr, use_image):
+    def nondist_validation(self, dataloader, current_iter, tb_logger, save_img, rgb2bgr, use_image):
+        # print(self.output)
         dataset_name = dataloader.dataset.opt['name']
         with_metrics = self.opt['val'].get('metrics') is not None
         if with_metrics:
-            self.metric_results = {
-                metric: 0
-                for metric in self.opt['val']['metrics'].keys()
-            }
-        # pbar = tqdm(total=len(dataloader), unit='image')
+            self.metric_results = {metric: 0 for metric in self.opt['val']['metrics'].keys()}
 
         window_size = self.opt['val'].get('window_size', 0)
-
         if window_size:
             test = partial(self.pad_test, window_size)
         else:
@@ -235,40 +385,144 @@ class ImageCleanModel(BaseModel):
 
             self.feed_data(val_data)
             test()
-
             visuals = self.get_current_visuals()
-            sr_img = tensor2img([visuals['result']], rgb2bgr=rgb2bgr)
-            if 'gt' in visuals:
-                gt_img = tensor2img([visuals['gt']], rgb2bgr=rgb2bgr)
-                del self.gt
 
-            # tentative for out of GPU memory
+            # ---------------------------
+            # 1. Process Prediction (Result)
+            # ---------------------------
+            result_tensor = visuals['result']  # Expected shape: (1, 32, H, W)
+            print("Original result_tensor shape:", result_tensor.shape)
+            if result_tensor.dim() == 4:
+                result_tensor = result_tensor[0]  # Now shape: (32, H, W)
+            print("Result tensor after removing batch dimension:", result_tensor.shape)
+
+            if result_tensor.shape[0] > 3:
+                # RSS combine across channels: [1, H, W]
+                combined_result = torch.sqrt(torch.sum(result_tensor ** 2, dim=0, keepdim=True))
+                # Replicate to 3 channels for visualization
+                combined_result = combined_result.repeat(3, 1, 1)
+                print("Combined result shape after RSS and repeat:", combined_result.shape)
+            else:
+                combined_result = result_tensor
+
+            print("Result tensor min/max:", result_tensor.min().item(), result_tensor.max().item())
+            print("Combined result min/max before normalization:", combined_result.min().item(), combined_result.max().item())
+            combined_result = (combined_result - combined_result.min()) / (combined_result.max() - combined_result.min() + 1e-8)
+            print("Combined result min/max after normalization:", combined_result.min().item(), combined_result.max().item())
+
+            sr_img = tensor2img(combined_result, rgb2bgr=rgb2bgr)
+
+            # ---------------------------
+            # 2. Process Ground Truth (if available)
+            # ---------------------------
+            if 'gt' in visuals:
+                gt_tensor = visuals['gt']
+                print("Original gt_tensor shape:", gt_tensor.shape)
+                if gt_tensor.dim() == 4:
+                    gt_tensor = gt_tensor[0]  # shape: (32, H, W)
+                if gt_tensor.shape[0] > 3:
+                    combined_gt = torch.sqrt(torch.sum(gt_tensor ** 2, dim=0, keepdim=True))
+                    combined_gt = combined_gt.repeat(3, 1, 1)
+                    print("Combined gt shape after RSS and repeat:", combined_gt.shape)
+                else:
+                    combined_gt = gt_tensor
+                combined_gt = (combined_gt - combined_gt.min()) / (combined_gt.max() - combined_gt.min() + 1e-8)
+                gt_img = tensor2img(combined_gt, rgb2bgr=rgb2bgr)
+                del self.gt
+            else:
+                gt_img = None
+
+            # Memory cleanup for GPU tensors.
             del self.lq
             del self.output
             torch.cuda.empty_cache()
 
+            # ---------------------------
+            # 3. Save Combined (RSS) PNG Visualizations
+            # ---------------------------
             if save_img:
-                
                 if self.opt['is_train']:
-                    
-                    save_img_path = osp.join(self.opt['path']['visualization'],
-                                             img_name,
-                                             f'{img_name}_{current_iter}.png')
-                    
-                    save_gt_img_path = osp.join(self.opt['path']['visualization'],
-                                             img_name,
-                                             f'{img_name}_{current_iter}_gt.png')
+                    save_img_path = osp.join(self.opt['path']['visualization'], img_name, f'{img_name}_{current_iter}.png')
+                    save_gt_img_path = osp.join(self.opt['path']['visualization'], img_name, f'{img_name}_{current_iter}_gt.png')
                 else:
-                    
-                    save_img_path = osp.join(
-                        self.opt['path']['visualization'], dataset_name,
-                        f'{img_name}.png')
-                    save_gt_img_path = osp.join(
-                        self.opt['path']['visualization'], dataset_name,
-                        f'{img_name}_gt.png')
-                    
+                    save_img_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}.png')
+                    save_gt_img_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_gt.png')
+
                 imwrite(sr_img, save_img_path)
-                imwrite(gt_img, save_gt_img_path)
+                if gt_img is not None:
+                    imwrite(gt_img, save_gt_img_path)
+
+            # # ---------------------------
+            # # 4. Separate Coil Visualizations (Without RSS)
+            # # ---------------------------
+            # # Use the original input from val_data.
+            # lr_separate = val_data['lq'][0, :32, :, :].unsqueeze(1)    # [32, 1, H, W]
+            # noise_separate = val_data['lq'][0, 32:, :, :].unsqueeze(1)   # [32, 1, H, W]
+            # pred_separate = result_tensor.unsqueeze(1)                  # [32, 1, H, W]
+            # if 'gt' in visuals:
+            #     gt_separate = gt_tensor.unsqueeze(1)                    # [32, 1, H, W]
+            # else:
+            #     gt_separate = None
+
+            # lr_sep_img = tensor2img(lr_separate, rgb2bgr=rgb2bgr)
+            # noise_sep_img = tensor2img(noise_separate, rgb2bgr=rgb2bgr)
+            # pred_sep_img = tensor2img(pred_separate, rgb2bgr=rgb2bgr)
+            # if gt_separate is not None:
+            #     gt_sep_img = tensor2img(gt_separate, rgb2bgr=rgb2bgr)
+
+            # lr_sep_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_lr_sep.png')
+            # noise_sep_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_noise_sep.png')
+            # pred_sep_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_pred_sep.png')
+            # if gt_separate is not None:
+            #     gt_sep_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_gt_sep.png')
+
+            # imwrite(lr_sep_img, lr_sep_save_path)
+            # imwrite(noise_sep_img, noise_sep_save_path)
+            # imwrite(pred_sep_img, pred_sep_save_path)
+            # if gt_separate is not None:
+            #     imwrite(gt_sep_img, gt_sep_save_path)
+
+            # # ---------------------------
+            # # 5. Residual Visualizations (Noisy - Prediction)
+            # # ---------------------------
+            # # Use the noisy input (first 32 channels from val_data) and the prediction.
+            # lr_input_eval = val_data['lq'][0, :32, :, :]  # [32, H, W]
+            # residual = lr_input_eval - result_tensor       # [32, H, W]
+            # # RSS residual:
+            # residual_rss = torch.sqrt(torch.sum(residual ** 2, dim=0, keepdim=True))  # [1, H, W]
+            # residual_rss_vis = residual_rss.repeat(3, 1, 1)  # [3, H, W]
+            # residual_rss_img_np = tensor2img(residual_rss_vis, rgb2bgr=rgb2bgr)
+            # residual_rss_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_residual_rss.png')
+            # imwrite(residual_rss_img_np, residual_rss_save_path)
+
+            # # Separate residual (grid of individual coil residuals):
+            # residual_sep = residual.unsqueeze(1)  # [32, 1, H, W]
+            # residual_sep_img = tensor2img(residual_sep, rgb2bgr=rgb2bgr)
+            # residual_sep_save_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_residual_sep.png')
+            # imwrite(residual_sep_img, residual_sep_save_path)
+
+            # # ---------------------------
+            # # 6. Save 4D NIfTI Volumes (Noisy, Prediction, Residual)
+            # # ---------------------------
+            # # For the first sample in the batch:
+            # noisy_4d = val_data['lq'][0, :32, :, :].detach().cpu().numpy()   # [32, H, W]
+            # pred_4d = result_tensor.detach().cpu().numpy()                    # [32, H, W]
+            # residual_4d = noisy_4d - pred_4d                                    # [32, H, W]
+
+            # # Rearrange to [H, W, 32] for NIfTI storage.
+            # noisy_4d = np.transpose(noisy_4d, (1, 2, 0))
+            # pred_4d = np.transpose(pred_4d, (1, 2, 0))
+            # residual_4d = np.transpose(residual_4d, (1, 2, 0))
+            # import nibabel as nib
+            # noisy_nii = nib.Nifti1Image(noisy_4d, np.eye(4))
+            # pred_nii = nib.Nifti1Image(pred_4d, np.eye(4))
+            # residual_nii = nib.Nifti1Image(residual_4d, np.eye(4))
+            # noisy_nii_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_noisy.nii.gz')
+            # pred_nii_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_pred.nii.gz')
+            # residual_nii_path = osp.join(self.opt['path']['visualization'], dataset_name, f'{img_name}_residual.nii.gz')
+            # nib.save(noisy_nii, noisy_nii_path)
+            # nib.save(pred_nii, pred_nii_path)
+            # nib.save(residual_nii, residual_nii_path)
 
             if with_metrics:
                 # calculate metrics
@@ -276,25 +530,21 @@ class ImageCleanModel(BaseModel):
                 if use_image:
                     for name, opt_ in opt_metric.items():
                         metric_type = opt_.pop('type')
-                        self.metric_results[name] += getattr(
-                            metric_module, metric_type)(sr_img, gt_img, **opt_)
+                        self.metric_results[name] += getattr(metric_module, metric_type)(sr_img, gt_img, **opt_)
                 else:
                     for name, opt_ in opt_metric.items():
                         metric_type = opt_.pop('type')
-                        self.metric_results[name] += getattr(
-                            metric_module, metric_type)(visuals['result'], visuals['gt'], **opt_)
-
-            cnt += 1
+                        self.metric_results[name] += getattr(metric_module, metric_type)(visuals['result'], visuals['gt'], **opt_)
+                cnt += 1
 
         current_metric = 0.
         if with_metrics:
             for metric in self.metric_results.keys():
                 self.metric_results[metric] /= cnt
                 current_metric = self.metric_results[metric]
-
-            self._log_validation_metric_values(current_iter, dataset_name,
-                                               tb_logger)
+            self._log_validation_metric_values(current_iter, dataset_name, tb_logger)
         return current_metric
+
 
 
     def _log_validation_metric_values(self, current_iter, dataset_name,

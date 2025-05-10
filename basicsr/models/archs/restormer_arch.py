@@ -200,11 +200,13 @@ class Restormer(nn.Module):
         heads = [1,2,4,8],
         ffn_expansion_factor = 2.66,
         bias = False,
-        LayerNorm_type = 'WithBias',   ## Other option 'BiasFree'
+        LayerNorm_type = 'BiasFree',   ## Other option 'BiasFree'
         dual_pixel_task = False        ## True for dual-pixel defocus deblurring only. Also set inp_channels=6
     ):
 
         super(Restormer, self).__init__()
+
+        self.out_channels = out_channels
 
         self.patch_embed = OverlapPatchEmbed(inp_channels, dim)
 
@@ -239,7 +241,11 @@ class Restormer(nn.Module):
         if self.dual_pixel_task:
             self.skip_conv = nn.Conv2d(dim, int(dim*2**1), kernel_size=1, bias=bias)
         ###########################
-            
+
+        # Modify the final output layer to use grouped convolution so that each output channel is computed independently.
+        # self.output = nn.Conv2d(int(dim*2**1), out_channels, kernel_size=3, stride=1, padding=1, 
+        #                         bias=bias, groups=out_channels)
+
         self.output = nn.Conv2d(int(dim*2**1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
 
     def forward(self, inp_img):
@@ -278,8 +284,16 @@ class Restormer(nn.Module):
             out_dec_level1 = self.output(out_dec_level1)
         ###########################
         else:
-            out_dec_level1 = self.output(out_dec_level1) + inp_img
-
+            # out_dec_level1 = self.output(out_dec_level1) + inp_img[:, :self.out_channels, :, :]
+            out_conv = self.output(out_dec_level1)
+            # Use different skip connections depending on output channels.
+            if self.out_channels == 1:
+                # Compute the RSS over the first half of the input channels (assumed MRI images).
+                skip = torch.sqrt(torch.sum(inp_img[:, :32, :, :] ** 2, dim=1, keepdim=True))
+            else:
+                # Otherwise, simply use the first out_channels from inp_img.
+                skip = inp_img[:, :self.out_channels, :, :]
+            out_dec_level1 = out_conv + skip
 
         return out_dec_level1
 
