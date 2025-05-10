@@ -44,7 +44,12 @@ def save_img(filepath, img):
     cv2.imwrite(filepath,cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 def load_gray_img(filepath):
-    return np.expand_dims(cv2.imread(filepath, cv2.IMREAD_GRAYSCALE), axis=2)
+    img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise ValueError(f"Image not loaded. Check the file path: {filepath}")
+    if img.ndim != 2:
+        raise ValueError(f"Unexpected image dimensions: {img.shape}")
+    return np.expand_dims(img, axis=2)
 
 def save_gray_img(filepath, img):
     cv2.imwrite(filepath, img)
@@ -63,7 +68,8 @@ def get_weights_and_parameters(task, parameters):
         weights = os.path.join('Denoising', 'pretrained_models', 'gaussian_color_denoising_blind.pth')
         parameters['LayerNorm_type'] =  'BiasFree'
     elif task == 'Gaussian_Gray_Denoising':
-        weights = os.path.join('Denoising', 'pretrained_models', 'gaussian_gray_denoising_blind.pth')
+        weights = os.path.join('Denoising', 'pretrained_models', 'gaussian_gray_denoising_sigma50.pth')
+        # change inp channels to 2 here
         parameters['inp_channels'] =  1
         parameters['out_channels'] =  1
         parameters['LayerNorm_type'] =  'BiasFree'
@@ -89,7 +95,7 @@ if len(files) == 0:
     raise Exception(f'No files found at {inp_dir}')
 
 # Get model weights and parameters
-parameters = {'inp_channels':3, 'out_channels':3, 'dim':48, 'num_blocks':[4,6,6,8], 'num_refinement_blocks':4, 'heads':[1,2,4,8], 'ffn_expansion_factor':2.66, 'bias':False, 'LayerNorm_type':'WithBias', 'dual_pixel_task':False}
+parameters = {'inp_channels':1, 'out_channels':1, 'dim':48, 'num_blocks':[4,6,6,8], 'num_refinement_blocks':4, 'heads':[1,2,4,8], 'ffn_expansion_factor':2.66, 'bias':False, 'LayerNorm_type':'WithBias', 'dual_pixel_task':False}
 weights, parameters = get_weights_and_parameters(task, parameters)
 
 load_arch = run_path(os.path.join('basicsr', 'models', 'archs', 'restormer_arch.py'))
@@ -128,7 +134,16 @@ with torch.no_grad():
 
         if args.tile is None:
             ## Testing on the original resolution image
+
             restored = model(input_)
+
+            # noise_level = 50  # Replace with the actual noise level for testing
+            # noise_level_map = torch.full_like(input_, fill_value=noise_level / 255.0)
+            # # Concatenate image and noise level map along the channel dimension
+            # input_with_noise = torch.cat((input_, noise_level_map), dim=1)
+            # # Forward pass through the model
+            # restored = model(input_with_noise)
+
         else:
             # test the image tile by tile
             b, c, h, w = input_.shape

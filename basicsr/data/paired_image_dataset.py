@@ -12,6 +12,12 @@ import random
 import numpy as np
 import torch
 import cv2
+from basicsr.utils.misc import scandir
+import matplotlib.pyplot as plt
+import scipy.io as sio
+from random import randrange, uniform
+import os
+import pdb
 
 class Dataset_PairedImage(data.Dataset):
     """Paired image dataset for image restoration.
@@ -131,6 +137,229 @@ class Dataset_PairedImage(data.Dataset):
     def __len__(self):
         return len(self.paths)
 
+import os
+import re
+import cv2
+import random
+import numpy as np
+import torch
+import torch.nn.functional as F
+import scipy.io as sio
+
+# You need to have this function defined (or import it from your module)
+def repeated_gaussian_smoothing(img, ksize=3, sigma=1.0, times=5):
+    """
+    Repeatedly applies Gaussian blur to a 2D image (float32, [0,1]).
+    """
+    smoothed = img.copy()
+    for _ in range(times):
+        smoothed = cv2.GaussianBlur(smoothed, (ksize, ksize), sigma)
+    return smoothed
+
+# Dummy functions for imfrombytes and random_augmentation.
+# Replace these with your actual implementations.
+def imfrombytes(img_bytes, flag='grayscale', float32=True):
+    import cv2
+    import numpy as np
+    # Decode image from bytes (assuming grayscale)
+    nparr = np.frombuffer(img_bytes, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+    if float32:
+        img = img.astype(np.float32) / 255.0
+    return img
+
+def random_augmentation(img):
+    # For simplicity, just return the image.
+    return (img,)
+
+class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
+    """
+    Online Gaussian denoising dataset for a single-coil MRI simulation.
+    
+    For each GT image sample, the pipeline is:
+      1) Crop the image to the sensitivity map’s spatial dimensions (e.g., 146x146).
+      2) Optionally apply data augmentation.
+      3) Use a coil sensitivity map to simulate a clean coil image (target coil, here index 0).
+      4) Generate a noise map via repeated Gaussian smoothing (with optional inversion) on the clean image.
+      5) Add spatially varying noise and a small whole-image noise to obtain a noisy coil image.
+      6) Form the input as 2 channels:
+             - Channel 0: Noisy coil image.
+             - Channel 1: Corresponding noise map.
+         The target is the clean coil image.
+    """
+    def __init__(self, opt):
+        super(Dataset_OnlineGaussianDenoising, self).__init__()
+        self.opt = opt
+        self.phase = opt.get('phase', 'train')
+        self.in_ch = opt.get('in_ch', 1)  # assumed grayscale
+        self.gt_size = opt.get('gt_size', 146)
+        self.geometric_augs = opt.get('geometric_augs', True) if self.phase == 'train' else False
+
+        # Smoothing parameters.
+        self.smooth_times = opt.get('smooth_times', 5)
+        self.smooth_ksize = opt.get('smooth_ksize', 3)
+        self.smooth_sigma = opt.get('smooth_sigma', 1.0)
+
+        # Noise standard deviation range.
+        self.noise_std_min = opt.get('noise_std_min', 0.50)
+        self.noise_std_max = opt.get('noise_std_max', 0.70)
+
+        # Whole-image noise constant.
+        self.whole_noise_std = opt.get('whole_noise_std', 0.01)
+
+        # Probability to invert intensities.
+        self.random_invert_prob = opt.get('random_invert_prob', 0.5)
+
+        # Multi-coil simulation parameters.
+        self.num_coils = opt.get('num_coils', 32)
+        self.use_csm = True  # Only using CSM in this pipeline.
+
+        # File I/O.
+        self.io_backend_opt = opt['io_backend']
+        self.gt_folder = opt['dataroot_gt']
+        self.file_client = None
+
+        # Gather GT image paths.
+        self.paths = sorted(list(self._scandir(self.gt_folder)))
+
+        # Load the coil sensitivity map.
+        self.coil_sens_path = opt.get('coil_sens_path', None)
+        if self.coil_sens_path is None:
+            raise ValueError("Please provide the path to the coil sensitivity map in 'coil_sens_path'.")
+        mat = sio.loadmat(self.coil_sens_path)
+        self.sens_gre = mat['sens_gre']  # expected shape: (gt_size, gt_size, num_coils, num_versions)
+        self.sens_gre = np.squeeze(self.sens_gre)
+        if self.sens_gre.ndim != 4:
+            raise ValueError("The coil sensitivity map should have 4 dimensions (H, W, num_coils, num_versions).")
+        H_sens, W_sens, num_coils, num_versions = self.sens_gre.shape
+        if H_sens != self.gt_size or W_sens != self.gt_size:
+            raise ValueError("Sensitivity map spatial dimensions do not match gt_size.")
+        self.num_coils = num_coils
+        self.num_versions = num_versions
+
+    def __getitem__(self, index):
+        if self.file_client is None:
+            from basicsr.utils import FileClient  # or your FileClient module
+            self.file_client = FileClient(self.io_backend_opt.pop('type'), **self.io_backend_opt)
+
+        # --- Load GT image ---
+        gt_path = self.paths[index % len(self.paths)]
+        img_bytes = self.file_client.get(gt_path, 'gt')
+        if self.in_ch == 3:
+            raise ValueError("Multi-coil MRI simulation only supports grayscale (in_ch=1).")
+        else:
+            img_gt = imfrombytes(img_bytes, flag='grayscale', float32=True)
+            img_gt = np.expand_dims(img_gt, axis=2)  # shape: (H, W, 1)
+        img_gt = self._crop_to_csm_size(img_gt, self.gt_size)
+        if self.phase == 'train' and self.geometric_augs:
+            img_gt, = random_augmentation(img_gt)
+        if img_gt.max() > 1.0:
+            img_gt = img_gt / 255.0
+        else:
+            img_gt = np.clip(img_gt, 0, 1.0)
+        img_gt = np.squeeze(img_gt, axis=2)  # shape: (H, W)
+        H, W = img_gt.shape
+
+        # *** Change intensity by adding a random offset ***
+        offset_range = self.opt.get('intensity_offset_range', 0.2)  # can be adjusted as needed
+        intensity_offset = random.uniform(-offset_range, offset_range)
+        img_gt = np.clip(img_gt + intensity_offset, 0, 1.0)
+
+        # --- Generate clean coil image for target coil using the CSM ---
+        # Use a random version from the sensitivity map.
+        slice_idx = random.randint(0, self.num_versions - 1)
+        csm_slice = self.sens_gre[:, :, :, slice_idx]  # shape: (H, W, num_coils)
+        csm_slice = np.transpose(csm_slice, (2, 0, 1))    # shape: (num_coils, H, W)
+        target_coil = 0  # fixed target coil index (you can also randomize if desired)
+        clean_coil = img_gt * np.abs(csm_slice[target_coil])  # shape: (H, W)
+
+        # --- Simulate noise for the target coil ---
+        coil_smoothed = repeated_gaussian_smoothing(
+            clean_coil,
+            ksize=self.smooth_ksize,
+            sigma=self.smooth_sigma,
+            times=self.smooth_times
+        )
+        coil_smoothed = np.clip(coil_smoothed, 0, 1)
+        if random.random() < self.random_invert_prob:
+            coil_smoothed = 1.0 - coil_smoothed
+        noise_std = random.uniform(self.noise_std_min, self.noise_std_max)
+        noise_map = coil_smoothed * noise_std
+        smoothing_noise = np.random.randn(H, W).astype(np.float32) * noise_map
+        noisy_coil = clean_coil + smoothing_noise
+        whole_noise = np.random.randn(H, W).astype(np.float32) * self.whole_noise_std
+        noisy_coil = noisy_coil + whole_noise
+        noisy_coil = np.clip(noisy_coil, 0, 1)
+
+        # --- Form Input and GT ---
+        # Input: 2 channels (noisy coil image and its noise map)
+        lq = np.stack([noisy_coil, noise_map], axis=0)  # shape: (2, H, W)
+        # GT: the clean coil image (target)
+        gt_final = clean_coil  # shape: (H, W)
+
+        # --- Convert to torch tensors ---
+        lq_tensor = torch.from_numpy(lq).float()
+        gt_tensor = torch.from_numpy(gt_final).float().unsqueeze(0)  # (1, H, W)
+
+        return {
+            'lq': lq_tensor,  # Input: 2 channels
+            'gt': gt_tensor,  # Target: 1 channel (clean coil image)
+            'lq_path': gt_path,
+            'gt_path': gt_path,
+            'noise_std': noise_std,
+        }
+    
+    def __len__(self):
+        return len(self.paths)
+
+    # ----------------- Utility Functions -----------------
+    def _scandir(self, folder):
+        """Return full paths to files in the folder."""
+        for entry in sorted(os.listdir(folder)):
+            full_path = os.path.join(folder, entry)
+            if os.path.isfile(full_path):
+                yield full_path
+
+    def _crop_to_csm_size(self, img, target_size):
+        """
+        Crop the image to the target_size.
+        If the image is larger than target_size, a random crop is taken.
+        If it is smaller, padding is applied.
+        """
+        h, w, c = img.shape
+        if h < target_size or w < target_size:
+            pad_h = max(0, target_size - h)
+            pad_w = max(0, target_size - w)
+            img = np.pad(img, ((0, pad_h), (0, pad_w), (0, 0)), mode='reflect')
+            h, w, _ = img.shape
+        rnd_h = random.randint(0, h - target_size)
+        rnd_w = random.randint(0, w - target_size)
+        return img[rnd_h:rnd_h+target_size, rnd_w:rnd_w+target_size, :]
+
+    def _random_crop(self, img, patch_size):
+        """Crop a patch of size (patch_size, patch_size) from the image."""
+        h, w, c = img.shape
+        if h == patch_size and w == patch_size:
+            return img
+        rnd_h = random.randint(0, h - patch_size)
+        rnd_w = random.randint(0, w - patch_size)
+        return img[rnd_h:rnd_h+patch_size, rnd_w:rnd_w+patch_size, :]
+
+    def _apply_smoothing_per_channel(self, img):
+        """
+        Apply repeated Gaussian smoothing to each channel of the image.
+        """
+        h, w, c = img.shape
+        out = np.zeros_like(img)
+        for ch in range(c):
+            out[..., ch] = repeated_gaussian_smoothing(
+                img[..., ch],
+                ksize=self.smooth_ksize,
+                sigma=self.smooth_sigma,
+                times=self.smooth_times
+            )
+        return out
+
 class Dataset_GaussianDenoising(data.Dataset):
     """Paired image dataset for image restoration.
 
@@ -204,7 +433,8 @@ class Dataset_GaussianDenoising(data.Dataset):
         index = index % len(self.paths)
         # Load gt and lq images. Dimension order: HWC; channel order: BGR;
         # image range: [0, 1], float32.
-        gt_path = self.paths[index]['gt_path']
+        # gt_path = self.paths[index]['gt_path']
+        gt_path = self.paths[index]
         img_bytes = self.file_client.get(gt_path, 'gt')
 
         if self.in_ch == 3:
@@ -251,7 +481,9 @@ class Dataset_GaussianDenoising(data.Dataset):
 
             noise_level = torch.FloatTensor([sigma_value])/255.0
             # noise_level_map = torch.ones((1, img_lq.size(1), img_lq.size(2))).mul_(noise_level).float()
-            noise = torch.randn(img_lq.size()).mul_(noise_level).float()
+            noise_level_map = noise_level.expand(1, img_lq.size(1), img_lq.size(2))  # Shape: (1, H, W)
+            noise = torch.randn_like(img_lq).mul_(noise_level).float()
+            # noise = torch.randn(img_lq.size()).mul_(noise_level).float()
             img_lq.add_(noise)
 
         else:            
@@ -263,6 +495,13 @@ class Dataset_GaussianDenoising(data.Dataset):
                             bgr2rgb=False,
                             float32=True)
 
+            noise_level = torch.FloatTensor([self.sigma_test]) / 255.0
+            noise_level_map = noise_level.expand(1, img_lq.size(1), img_lq.size(2))  # Shape: (1, H, W)
+
+        # Concatenate the noise level map with the LQ image
+        # TODO: channel enable here
+        img_lq = torch.cat([img_lq, noise_level_map], dim=0)  # Shape: (2, H, W) for grayscale, (4, H, W) for RGB
+        
         return {
             'lq': img_lq,
             'gt': img_gt,

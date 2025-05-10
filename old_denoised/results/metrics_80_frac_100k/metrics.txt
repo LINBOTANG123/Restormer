@@ -1,0 +1,25 @@
+File-wise PSNR and SSIM Metrics:
+================================
+0801x2.png - PSNR: 20.44, SSIM: 0.452
+0802x2.png - PSNR: 22.98, SSIM: 0.767
+0803x2.png - PSNR: 18.26, SSIM: 0.343
+0804x2.png - PSNR: 23.69, SSIM: 0.590
+0805x2.png - PSNR: 18.08, SSIM: 0.360
+0806x2.png - PSNR: 18.31, SSIM: 0.473
+0807x2.png - PSNR: 19.80, SSIM: 0.673
+0808x2.png - PSNR: 19.44, SSIM: 0.427
+0809x2.png - PSNR: 19.30, SSIM: 0.299
+frac_001.png - PSNR: 16.28, SSIM: 0.219
+frac_002.png - PSNR: 14.89, SSIM: 0.332
+frac_003.png - PSNR: 15.53, SSIM: 0.232
+frac_004.png - PSNR: 16.26, SSIM: 0.181
+frac_005.png - PSNR: 17.08, SSIM: 0.105
+fractal_0801.png - PSNR: 15.29, SSIM: 0.294
+fractal_0807.png - PSNR: 15.30, SSIM: 0.292
+fractal_0812.png - PSNR: 16.05, SSIM: 0.197
+fractal_0819.png - PSNR: 15.09, SSIM: 0.370
+
+Average Metrics:
+================
+Average PSNR: 17.89
+Average SSIM: 0.367

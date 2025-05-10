@@ -6,6 +6,7 @@ import random
 import time
 import torch
 from os import path as osp
+import cv2
 
 from basicsr.data import create_dataloader, create_dataset
 from basicsr.data.data_sampler import EnlargedSampler
@@ -19,6 +20,13 @@ from basicsr.utils.dist_util import get_dist_info, init_dist
 from basicsr.utils.options import dict2str, parse
 
 import numpy as np
+
+# def combine_coils_rss(coil_tensor):
+#     # Assume coil_tensor is a numpy array of shape (32, H, W)
+#     combined = np.sqrt(np.sum(np.square(coil_tensor), axis=0))
+#     # Normalize to [0, 1] if necessary
+#     combined = (combined - combined.min()) / (combined.max() - combined.min() + 1e-8)
+#     return combined
 
 def parse_options(is_train=True):
     parser = argparse.ArgumentParser()
@@ -175,6 +183,14 @@ def main():
     if resume_state:  # resume training
         check_resume(opt, resume_state['iter'])
         model = create_model(opt)
+        if opt['path'].get('pretrain_network_g') is not None:
+            model.load_network(
+                net=model.net_g,
+                load_path=opt['path']['pretrain_network_g'],
+                strict=opt['path'].get('strict_load_g', True)
+                )
+            logger.info('Loaded pretrained weights for finetuning...')
+
         model.resume_training(resume_state)  # handle optimizers and schedulers
         logger.info(f"Resuming training from epoch: {resume_state['epoch']}, "
                     f"iter: {resume_state['iter']}.")
@@ -182,6 +198,13 @@ def main():
         current_iter = resume_state['iter']
     else:
         model = create_model(opt)
+        if opt['path'].get('pretrain_network_g') is not None:
+            model.load_network(
+                net=model.net_g,
+                load_path=opt['path']['pretrain_network_g'],
+                strict=opt['path'].get('strict_load_g', True)
+                )
+            logger.info('Loaded pretrained weights for finetuning...')
         start_epoch = 0
         current_iter = 0
 
@@ -267,7 +290,42 @@ def main():
                 y1 = y0 + mini_gt_size
                 lq = lq[:,:,x0:x1,y0:y1]
                 gt = gt[:,:,x0*scale:x1*scale,y0*scale:y1*scale]
+
             ###-------------------------------------------
+            # save_folder = "./visualization_samples"
+            # os.makedirs(save_folder, exist_ok=True)
+
+            # # Let's save the first 3 samples (or fewer if available)
+            # num_samples_to_save = min(3, lq.shape[0])
+            # for idx in range(num_samples_to_save):
+            #     sample_lq = lq[idx]  # shape: (C, H, W)
+            #     sample_gt = gt[idx]  # shape: (C, H, W)
+                
+            #     # Save a text file with shape info for this sample.
+            #     with open(os.path.join(save_folder, f"sample_{idx}_shape.txt"), "w") as f:
+            #         f.write(f"lq shape: {sample_lq.shape}\n")
+            #         f.write(f"gt shape: {sample_gt.shape}\n")
+                
+            #     # For each channel in this sample, save as PNG images.
+            #     num_channels_lq = sample_lq.shape[0]
+            #     for ch in range(num_channels_lq):
+            #         # Process lq channel image: normalize to 0-255 for saving
+            #         lq_img = sample_lq[ch]
+            #         lq_img_np = lq_img.detach().cpu().numpy()
+            #         lq_img_norm = (255 * np.clip(lq_img_np, 0, 1)).astype(np.uint8)
+            #         lq_filename = os.path.join(save_folder, f"sample_{idx}_lq_channel_{ch}.png")
+            #         cv2.imwrite(lq_filename, lq_img_norm)
+
+            #     num_channels_gt = sample_gt.shape[0]
+            #     for ch in range(num_channels_gt):
+            #         # Process gt channel image: normalize to 0-255 for saving
+            #         gt_img = sample_gt[ch]
+            #         gt_img_np = gt_img.detach().cpu().numpy()
+            #         gt_img_norm = (255 * np.clip(gt_img_np, 0, 1)).astype(np.uint8)
+            #         gt_filename = os.path.join(save_folder, f"sample_{idx}_gt_channel_{ch}.png")
+            #         cv2.imwrite(gt_filename, gt_img_norm)
+                    
+            #     print(f"Saved sample {idx}: lq shape {sample_lq.shape}, gt shape {sample_gt.shape}")
 
             
             model.feed_train_data({'lq': lq, 'gt':gt})
