@@ -1,0 +1,1375 @@
+2025-05-14 23:25:42,171 INFO: 
+                ____                _       _____  ____
+               / __ ) ____ _ _____ (_)_____/ ___/ / __ \
+              / __  |/ __ `// ___// // ___/\__ \ / /_/ /
+             / /_/ // /_/ /(__  )/ // /__ ___/ // _, _/
+            /_____/ \__,_//____//_/ \___//____//_/ |_|
+     ______                   __   __                 __      __
+    / ____/____   ____   ____/ /  / /   __  __ _____ / /__   / /
+   / / __ / __ \ / __ \ / __  /  / /   / / / // ___// //_/  / /
+  / /_/ // /_/ // /_/ // /_/ /  / /___/ /_/ // /__ / /<    /_/
+  \____/ \____/ \____/ \____/  /_____/\____/ \___//_/|_|  (_)
+    
+Version Information: 
+	BasicSR: 1.2.0+1c931af
+	PyTorch: 1.13.1+cu117
+	TorchVision: 0.14.1+cu117
+2025-05-14 23:25:42,171 INFO: 
+  name: GaussianGrayDenoising_RestormerSigma_smooth
+  model_type: ImageCleanModel
+  scale: 1
+  num_gpu: 1
+  manual_seed: 42
+  datasets:[
+    train:[
+      name: TrainSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_type: random
+      sigma_range: [55, 75]
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/new_train_gray
+      dataroot_lq: none
+      geometric_augs: True
+      noise_std_min: 0.05
+      noise_std_max: 0.1
+      whole_noise_std: 0.03
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      use_csm: True
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      use_shuffle: True
+      num_worker_per_gpu: 4
+      batch_size_per_gpu: 4
+      mini_batch_sizes: [4, 4, 4, 4, 4, 4, 4]
+      iters: [92000, 64000, 48000, 36000, 36000, 24000, 200000, 100000]
+      gt_size: 146
+      gt_sizes: [64, 64, 64, 128, 128, 128, 64, 128]
+      dataset_enlarge_ratio: 1
+      prefetch_mode: None
+      phase: train
+      scale: 1
+    ]
+    val:[
+      name: ValSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_test: 50
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/test
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      dataroot_lq: none
+      io_backend:[
+        type: disk
+      ]
+      noise_std_min: 0.05
+      noise_std_max: 0.45
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      phase: val
+      scale: 1
+    ]
+  ]
+  network_g:[
+    type: Restormer
+    inp_channels: 2
+    out_channels: 1
+    dim: 48
+    num_blocks: [4, 6, 6, 8]
+    num_refinement_blocks: 4
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.66
+    bias: False
+    LayerNorm_type: BiasFree
+    dual_pixel_task: False
+  ]
+  path:[
+    pretrain_network_g: None
+    strict_load_g: False
+    resume_state: None
+    root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer
+    experiments_root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth
+    models: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth/models
+    training_states: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth/training_states
+    log: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth
+    visualization: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth/visualization
+  ]
+  train:[
+    total_iter: 600000
+    warmup_iter: -1
+    use_grad_clip: True
+    scheduler:[
+      type: CosineAnnealingRestartCyclicLR
+      periods: [92000, 208000, 400000]
+      restart_weights: [1, 1, 1]
+      eta_mins: [0.0003, 0.0001, 5e-05]
+    ]
+    mixing_augs:[
+      mixup: True
+      mixup_beta: 1.2
+      use_identity: True
+    ]
+    optim_g:[
+      type: AdamW
+      lr: 0.0001
+      weight_decay: 0.0001
+      betas: [0.9, 0.999]
+    ]
+    pixel_opt:[
+      type: L1Loss
+      loss_weight: 1
+      reduction: mean
+    ]
+  ]
+  val:[
+    window_size: 8
+    val_freq: 4000.0
+    save_img: True
+    rgb2bgr: True
+    use_image: False
+    max_minibatch: 8
+    metrics:[
+      psnr:[
+        type: calculate_psnr
+        crop_border: 0
+        test_y_channel: False
+      ]
+    ]
+  ]
+  logger:[
+    print_freq: 1000
+    save_checkpoint_freq: 4000.0
+    use_tb_logger: True
+    wandb:[
+      project: None
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 29500
+  ]
+  is_train: True
+  dist: False
+  rank: 0
+  world_size: 1
+
+2025-05-14 23:25:49,356 INFO: Dataset Dataset_OnlineGaussianDenoising - TrainSet is created.
+2025-05-14 23:25:49,356 INFO: Training statistics:
+	Number of train images: 11000
+	Dataset enlarge ratio: 1
+	Batch size per gpu: 4
+	World size (gpu number): 1
+	Require iter number per epoch: 2750
+	Total epochs: 219; iters: 600000.
+2025-05-14 23:25:51,417 INFO: Dataset Dataset_OnlineGaussianDenoising - ValSet is created.
+2025-05-14 23:25:51,418 INFO: Number of val images/folders in ValSet: 3
+2025-05-14 23:25:58,873 INFO: Network: Restormer, with parameters: 26,109,508
+2025-05-14 23:25:58,873 INFO: Restormer(
+  (patch_embed): OverlapPatchEmbed(
+    (proj): Conv2d(2, 48, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+  )
+  (encoder_level1): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down1_2): Downsample(
+    (body): Sequential(
+      (0): Conv2d(48, 24, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (encoder_level2): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down2_3): Downsample(
+    (body): Sequential(
+      (0): Conv2d(96, 48, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (encoder_level3): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down3_4): Downsample(
+    (body): Sequential(
+      (0): Conv2d(192, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (latent): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (6): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (7): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up4_3): Upsample(
+    (body): Sequential(
+      (0): Conv2d(384, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (reduce_chan_level3): Conv2d(384, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (decoder_level3): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up3_2): Upsample(
+    (body): Sequential(
+      (0): Conv2d(192, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (reduce_chan_level2): Conv2d(192, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (decoder_level2): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up2_1): Upsample(
+    (body): Sequential(
+      (0): Conv2d(96, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (decoder_level1): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (refinement): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (output): Conv2d(96, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+)
+2025-05-14 23:25:58,876 INFO: Model [ImageCleanModel] is created.
+2025-05-14 23:25:59,037 INFO: Start training from epoch: 0, iter: 0
+2025-05-14 23:25:59,770 INFO: 
+ Updating Patch_Size to 64 and Batch_Size to 0 
+
+2025-05-14 23:29:02,842 INFO: [Gauss..][epoch:  0, iter:   1,000, lr:(1.001e-04,)] [eta: 1 day, 6:34:45, time (data): 0.170 (0.001)] l_pix: 9.0854e-03 
+2025-05-14 23:31:51,416 INFO: [Gauss..][epoch:  0, iter:   2,000, lr:(1.002e-04,)] [eta: 1 day, 5:15:56, time (data): 0.167 (0.001)] l_pix: 7.0774e-03 
+2025-05-14 23:34:40,181 INFO: [Gauss..][epoch:  1, iter:   3,000, lr:(1.005e-04,)] [eta: 1 day, 4:48:24, time (data): 0.169 (0.001)] l_pix: 6.8293e-03 
+2025-05-14 23:37:29,506 INFO: [Gauss..][epoch:  1, iter:   4,000, lr:(1.009e-04,)] [eta: 1 day, 4:34:37, time (data): 0.171 (0.001)] l_pix: 4.7308e-03 
+2025-05-14 23:37:29,507 INFO: Saving models and training states.
+2025-05-14 23:37:32,445 INFO: Validation ValSet,		 # psnr: 31.2431
+2025-05-14 23:40:21,628 INFO: [Gauss..][epoch:  1, iter:   5,000, lr:(1.015e-04,)] [eta: 1 day, 4:30:46, time (data): 0.168 (0.001)] l_pix: 6.6932e-03 
+2025-05-14 23:43:10,813 INFO: [Gauss..][epoch:  2, iter:   6,000, lr:(1.021e-04,)] [eta: 1 day, 4:22:24, time (data): 0.169 (0.001)] l_pix: 7.3942e-03 
+2025-05-14 23:45:58,842 INFO: [Gauss..][epoch:  2, iter:   7,000, lr:(1.028e-04,)] [eta: 1 day, 4:13:59, time (data): 0.167 (0.001)] l_pix: 5.1036e-03 
+2025-05-14 23:48:46,661 INFO: [Gauss..][epoch:  2, iter:   8,000, lr:(1.037e-04,)] [eta: 1 day, 4:06:43, time (data): 0.167 (0.001)] l_pix: 6.3188e-03 
+2025-05-14 23:48:46,661 INFO: Saving models and training states.
+2025-05-14 23:48:47,445 INFO: Validation ValSet,		 # psnr: 42.0897
+2025-05-14 23:51:36,213 INFO: [Gauss..][epoch:  3, iter:   9,000, lr:(1.047e-04,)] [eta: 1 day, 4:02:20, time (data): 0.168 (0.001)] l_pix: 6.1537e-03 
+2025-05-14 23:54:24,459 INFO: [Gauss..][epoch:  3, iter:  10,000, lr:(1.058e-04,)] [eta: 1 day, 3:56:59, time (data): 0.169 (0.001)] l_pix: 6.4125e-03 
+2025-05-14 23:57:12,117 INFO: [Gauss..][epoch:  3, iter:  11,000, lr:(1.070e-04,)] [eta: 1 day, 3:51:34, time (data): 0.168 (0.001)] l_pix: 5.4791e-03 
+2025-05-15 00:00:00,894 INFO: [Gauss..][epoch:  4, iter:  12,000, lr:(1.083e-04,)] [eta: 1 day, 3:47:30, time (data): 0.167 (0.001)] l_pix: 6.3145e-03 
+2025-05-15 00:00:00,894 INFO: Saving models and training states.
+2025-05-15 00:00:01,732 INFO: Validation ValSet,		 # psnr: 28.1010
+2025-05-15 00:02:48,441 INFO: [Gauss..][epoch:  4, iter:  13,000, lr:(1.097e-04,)] [eta: 1 day, 3:42:42, time (data): 0.168 (0.001)] l_pix: 5.6831e-03 
+2025-05-15 00:05:36,418 INFO: [Gauss..][epoch:  5, iter:  14,000, lr:(1.112e-04,)] [eta: 1 day, 3:38:29, time (data): 0.169 (0.001)] l_pix: 9.9371e-03 
+2025-05-15 00:08:24,309 INFO: [Gauss..][epoch:  5, iter:  15,000, lr:(1.128e-04,)] [eta: 1 day, 3:34:25, time (data): 0.170 (0.001)] l_pix: 4.8552e-03 
+2025-05-15 00:11:12,208 INFO: [Gauss..][epoch:  5, iter:  16,000, lr:(1.146e-04,)] [eta: 1 day, 3:30:30, time (data): 0.168 (0.001)] l_pix: 4.5466e-03 
+2025-05-15 00:11:12,209 INFO: Saving models and training states.
+2025-05-15 00:11:12,997 INFO: Validation ValSet,		 # psnr: 32.8435
+2025-05-15 00:14:01,585 INFO: [Gauss..][epoch:  6, iter:  17,000, lr:(1.164e-04,)] [eta: 1 day, 3:27:33, time (data): 0.170 (0.001)] l_pix: 5.6479e-03 
+2025-05-15 00:16:49,862 INFO: [Gauss..][epoch:  6, iter:  18,000, lr:(1.183e-04,)] [eta: 1 day, 3:24:02, time (data): 0.169 (0.001)] l_pix: 1.0110e-02 
+2025-05-15 00:19:38,318 INFO: [Gauss..][epoch:  6, iter:  19,000, lr:(1.203e-04,)] [eta: 1 day, 3:20:41, time (data): 0.170 (0.001)] l_pix: 5.2042e-03 
+2025-05-15 00:22:27,332 INFO: [Gauss..][epoch:  7, iter:  20,000, lr:(1.224e-04,)] [eta: 1 day, 3:17:40, time (data): 0.166 (0.001)] l_pix: 5.3517e-03 
+2025-05-15 00:22:27,332 INFO: Saving models and training states.
+2025-05-15 00:22:28,134 INFO: Validation ValSet,		 # psnr: 34.8407
+2025-05-15 00:25:16,991 INFO: [Gauss..][epoch:  7, iter:  21,000, lr:(1.246e-04,)] [eta: 1 day, 3:14:57, time (data): 0.168 (0.001)] l_pix: 6.0542e-03 
+2025-05-15 00:28:06,438 INFO: [Gauss..][epoch:  7, iter:  22,000, lr:(1.269e-04,)] [eta: 1 day, 3:12:08, time (data): 0.170 (0.001)] l_pix: 5.6495e-03 
+2025-05-15 00:30:54,855 INFO: [Gauss..][epoch:  8, iter:  23,000, lr:(1.293e-04,)] [eta: 1 day, 3:08:53, time (data): 0.166 (0.001)] l_pix: 9.5905e-03 
+2025-05-15 00:33:42,940 INFO: [Gauss..][epoch:  8, iter:  24,000, lr:(1.317e-04,)] [eta: 1 day, 3:05:33, time (data): 0.167 (0.001)] l_pix: 7.6368e-03 
+2025-05-15 00:33:42,941 INFO: Saving models and training states.
+2025-05-15 00:33:43,798 INFO: Validation ValSet,		 # psnr: 37.9943
+2025-05-15 00:36:32,812 INFO: [Gauss..][epoch:  9, iter:  25,000, lr:(1.343e-04,)] [eta: 1 day, 3:02:56, time (data): 0.167 (0.001)] l_pix: 3.1189e-03 
+2025-05-15 00:39:20,850 INFO: [Gauss..][epoch:  9, iter:  26,000, lr:(1.369e-04,)] [eta: 1 day, 2:59:38, time (data): 0.168 (0.001)] l_pix: 3.7383e-03 
+2025-05-15 00:42:08,818 INFO: [Gauss..][epoch:  9, iter:  27,000, lr:(1.396e-04,)] [eta: 1 day, 2:56:20, time (data): 0.169 (0.001)] l_pix: 6.6797e-03 
+2025-05-15 00:44:57,522 INFO: [Gauss..][epoch: 10, iter:  28,000, lr:(1.423e-04,)] [eta: 1 day, 2:53:20, time (data): 0.168 (0.001)] l_pix: 4.4398e-03 
+2025-05-15 00:44:57,523 INFO: Saving models and training states.
+2025-05-15 00:44:58,593 INFO: Validation ValSet,		 # psnr: 30.3409
+2025-05-15 00:47:47,662 INFO: [Gauss..][epoch: 10, iter:  29,000, lr:(1.452e-04,)] [eta: 1 day, 2:50:48, time (data): 0.166 (0.001)] l_pix: 5.4744e-03 
+2025-05-15 00:50:36,105 INFO: [Gauss..][epoch: 10, iter:  30,000, lr:(1.480e-04,)] [eta: 1 day, 2:47:43, time (data): 0.167 (0.001)] l_pix: 4.1767e-03 
+2025-05-15 00:53:25,213 INFO: [Gauss..][epoch: 11, iter:  31,000, lr:(1.510e-04,)] [eta: 1 day, 2:44:52, time (data): 0.170 (0.001)] l_pix: 5.1770e-03 
+2025-05-15 00:56:13,910 INFO: [Gauss..][epoch: 11, iter:  32,000, lr:(1.540e-04,)] [eta: 1 day, 2:41:53, time (data): 0.169 (0.001)] l_pix: 3.9676e-03 
+2025-05-15 00:56:13,911 INFO: Saving models and training states.
+2025-05-15 00:56:14,987 INFO: Validation ValSet,		 # psnr: 39.1572
+2025-05-15 00:59:02,483 INFO: [Gauss..][epoch: 11, iter:  33,000, lr:(1.570e-04,)] [eta: 1 day, 2:38:53, time (data): 0.168 (0.001)] l_pix: 7.4117e-03 
+2025-05-15 01:01:52,286 INFO: [Gauss..][epoch: 12, iter:  34,000, lr:(1.602e-04,)] [eta: 1 day, 2:36:14, time (data): 0.168 (0.001)] l_pix: 4.4859e-03 
+2025-05-15 01:04:40,785 INFO: [Gauss..][epoch: 12, iter:  35,000, lr:(1.633e-04,)] [eta: 1 day, 2:33:13, time (data): 0.168 (0.001)] l_pix: 7.9036e-03 
+2025-05-15 01:07:29,409 INFO: [Gauss..][epoch: 13, iter:  36,000, lr:(1.665e-04,)] [eta: 1 day, 2:30:15, time (data): 0.169 (0.001)] l_pix: 5.8895e-03 
+2025-05-15 01:07:29,409 INFO: Saving models and training states.
+2025-05-15 01:07:30,328 INFO: Validation ValSet,		 # psnr: 32.2550
+2025-05-15 01:10:18,849 INFO: [Gauss..][epoch: 13, iter:  37,000, lr:(1.697e-04,)] [eta: 1 day, 2:27:30, time (data): 0.169 (0.001)] l_pix: 4.0263e-03 
+2025-05-15 01:13:07,349 INFO: [Gauss..][epoch: 13, iter:  38,000, lr:(1.730e-04,)] [eta: 1 day, 2:24:31, time (data): 0.169 (0.001)] l_pix: 4.6847e-03 
+2025-05-15 01:15:55,964 INFO: [Gauss..][epoch: 14, iter:  39,000, lr:(1.763e-04,)] [eta: 1 day, 2:21:33, time (data): 0.166 (0.001)] l_pix: 4.2946e-03 
+2025-05-15 01:18:43,917 INFO: [Gauss..][epoch: 14, iter:  40,000, lr:(1.797e-04,)] [eta: 1 day, 2:18:28, time (data): 0.168 (0.001)] l_pix: 5.3727e-03 
+2025-05-15 01:18:43,918 INFO: Saving models and training states.
+2025-05-15 01:18:44,801 INFO: Validation ValSet,		 # psnr: 26.1449
+2025-05-15 01:21:32,623 INFO: [Gauss..][epoch: 14, iter:  41,000, lr:(1.830e-04,)] [eta: 1 day, 2:15:33, time (data): 0.167 (0.001)] l_pix: 6.2548e-03 
+2025-05-15 01:24:21,276 INFO: [Gauss..][epoch: 15, iter:  42,000, lr:(1.864e-04,)] [eta: 1 day, 2:12:38, time (data): 0.167 (0.001)] l_pix: 3.4028e-03 
+2025-05-15 01:27:09,492 INFO: [Gauss..][epoch: 15, iter:  43,000, lr:(1.898e-04,)] [eta: 1 day, 2:09:37, time (data): 0.169 (0.001)] l_pix: 4.1166e-03 
+2025-05-15 01:29:57,722 INFO: [Gauss..][epoch: 15, iter:  44,000, lr:(1.932e-04,)] [eta: 1 day, 2:06:37, time (data): 0.168 (0.001)] l_pix: 6.4285e-03 
+2025-05-15 01:29:57,723 INFO: Saving models and training states.
+2025-05-15 01:29:58,549 INFO: Validation ValSet,		 # psnr: 41.0149
+2025-05-15 01:32:47,333 INFO: [Gauss..][epoch: 16, iter:  45,000, lr:(1.966e-04,)] [eta: 1 day, 2:03:55, time (data): 0.168 (0.001)] l_pix: 9.9919e-03 
+2025-05-15 01:35:35,590 INFO: [Gauss..][epoch: 16, iter:  46,000, lr:(2.000e-04,)] [eta: 1 day, 2:00:56, time (data): 0.168 (0.001)] l_pix: 1.0412e-02 
+2025-05-15 01:38:24,699 INFO: [Gauss..][epoch: 17, iter:  47,000, lr:(2.034e-04,)] [eta: 1 day, 1:58:08, time (data): 0.167 (0.001)] l_pix: 4.4442e-03 
+2025-05-15 01:41:13,144 INFO: [Gauss..][epoch: 17, iter:  48,000, lr:(2.068e-04,)] [eta: 1 day, 1:55:11, time (data): 0.167 (0.001)] l_pix: 7.6993e-03 
+2025-05-15 01:41:13,145 INFO: Saving models and training states.
+2025-05-15 01:41:13,948 INFO: Validation ValSet,		 # psnr: 28.3400
+2025-05-15 01:44:02,131 INFO: [Gauss..][epoch: 17, iter:  49,000, lr:(2.102e-04,)] [eta: 1 day, 1:52:22, time (data): 0.168 (0.001)] l_pix: 5.6380e-03 
+2025-05-15 01:46:50,818 INFO: [Gauss..][epoch: 18, iter:  50,000, lr:(2.136e-04,)] [eta: 1 day, 1:49:29, time (data): 0.166 (0.001)] l_pix: 4.6178e-03 
+2025-05-15 01:49:38,706 INFO: [Gauss..][epoch: 18, iter:  51,000, lr:(2.170e-04,)] [eta: 1 day, 1:46:27, time (data): 0.167 (0.001)] l_pix: 3.6106e-03 
+2025-05-15 01:52:26,742 INFO: [Gauss..][epoch: 18, iter:  52,000, lr:(2.203e-04,)] [eta: 1 day, 1:43:28, time (data): 0.169 (0.001)] l_pix: 4.9963e-03 
+2025-05-15 01:52:26,743 INFO: Saving models and training states.
+2025-05-15 01:52:27,581 INFO: Validation ValSet,		 # psnr: 43.7161
+2025-05-15 01:55:17,270 INFO: [Gauss..][epoch: 19, iter:  53,000, lr:(2.237e-04,)] [eta: 1 day, 1:40:55, time (data): 0.171 (0.001)] l_pix: 4.0070e-03 
+2025-05-15 01:58:06,461 INFO: [Gauss..][epoch: 19, iter:  54,000, lr:(2.270e-04,)] [eta: 1 day, 1:38:08, time (data): 0.170 (0.001)] l_pix: 6.1533e-03 
+2025-05-15 02:00:55,640 INFO: [Gauss..][epoch: 19, iter:  55,000, lr:(2.302e-04,)] [eta: 1 day, 1:35:20, time (data): 0.169 (0.001)] l_pix: 7.7585e-03 
+2025-05-15 02:03:45,158 INFO: [Gauss..][epoch: 20, iter:  56,000, lr:(2.335e-04,)] [eta: 1 day, 1:32:36, time (data): 0.170 (0.001)] l_pix: 4.2258e-03 
+2025-05-15 02:03:45,160 INFO: Saving models and training states.
+2025-05-15 02:03:45,943 INFO: Validation ValSet,		 # psnr: 29.5765
+2025-05-15 02:06:35,124 INFO: [Gauss..][epoch: 20, iter:  57,000, lr:(2.367e-04,)] [eta: 1 day, 1:29:56, time (data): 0.170 (0.001)] l_pix: 3.6907e-03 
+2025-05-15 02:09:24,547 INFO: [Gauss..][epoch: 21, iter:  58,000, lr:(2.398e-04,)] [eta: 1 day, 1:27:10, time (data): 0.169 (0.001)] l_pix: 3.7304e-03 
+2025-05-15 02:12:13,927 INFO: [Gauss..][epoch: 21, iter:  59,000, lr:(2.429e-04,)] [eta: 1 day, 1:24:24, time (data): 0.170 (0.001)] l_pix: 4.8175e-03 
+2025-05-15 02:15:02,015 INFO: [Gauss..][epoch: 21, iter:  60,000, lr:(2.460e-04,)] [eta: 1 day, 1:21:26, time (data): 0.166 (0.001)] l_pix: 6.0014e-03 
+2025-05-15 02:15:02,016 INFO: Saving models and training states.
+2025-05-15 02:15:02,860 INFO: Validation ValSet,		 # psnr: 41.3543
+2025-05-15 02:17:52,146 INFO: [Gauss..][epoch: 22, iter:  61,000, lr:(2.490e-04,)] [eta: 1 day, 1:18:47, time (data): 0.168 (0.001)] l_pix: 3.1373e-03 
+2025-05-15 02:20:41,639 INFO: [Gauss..][epoch: 22, iter:  62,000, lr:(2.520e-04,)] [eta: 1 day, 1:16:01, time (data): 0.169 (0.001)] l_pix: 7.5508e-03 
+2025-05-15 02:23:31,143 INFO: [Gauss..][epoch: 22, iter:  63,000, lr:(2.548e-04,)] [eta: 1 day, 1:13:16, time (data): 0.171 (0.001)] l_pix: 4.1247e-03 
+2025-05-15 02:26:20,527 INFO: [Gauss..][epoch: 23, iter:  64,000, lr:(2.577e-04,)] [eta: 1 day, 1:10:29, time (data): 0.170 (0.001)] l_pix: 5.6635e-03 
+2025-05-15 02:26:20,528 INFO: Saving models and training states.
+2025-05-15 02:26:21,345 INFO: Validation ValSet,		 # psnr: 43.5102
+2025-05-15 02:29:10,380 INFO: [Gauss..][epoch: 23, iter:  65,000, lr:(2.604e-04,)] [eta: 1 day, 1:07:46, time (data): 0.169 (0.001)] l_pix: 3.2469e-03 
+2025-05-15 02:31:59,297 INFO: [Gauss..][epoch: 23, iter:  66,000, lr:(2.631e-04,)] [eta: 1 day, 1:04:56, time (data): 0.168 (0.001)] l_pix: 5.5945e-03 
+2025-05-15 02:34:48,828 INFO: [Gauss..][epoch: 24, iter:  67,000, lr:(2.657e-04,)] [eta: 1 day, 1:02:10, time (data): 0.168 (0.001)] l_pix: 5.8878e-03 
+2025-05-15 02:37:38,105 INFO: [Gauss..][epoch: 24, iter:  68,000, lr:(2.683e-04,)] [eta: 1 day, 0:59:23, time (data): 0.170 (0.001)] l_pix: 1.0579e-02 
+2025-05-15 02:37:38,105 INFO: Saving models and training states.
+2025-05-15 02:37:39,026 INFO: Validation ValSet,		 # psnr: 37.7983
+2025-05-15 02:40:28,063 INFO: [Gauss..][epoch: 25, iter:  69,000, lr:(2.707e-04,)] [eta: 1 day, 0:56:40, time (data): 0.167 (0.001)] l_pix: 4.2454e-03 
+2025-05-15 02:43:16,042 INFO: [Gauss..][epoch: 25, iter:  70,000, lr:(2.731e-04,)] [eta: 1 day, 0:53:42, time (data): 0.167 (0.001)] l_pix: 5.0526e-03 
+2025-05-15 02:46:03,912 INFO: [Gauss..][epoch: 25, iter:  71,000, lr:(2.754e-04,)] [eta: 1 day, 0:50:44, time (data): 0.169 (0.001)] l_pix: 4.0827e-03 
+2025-05-15 02:48:52,374 INFO: [Gauss..][epoch: 26, iter:  72,000, lr:(2.776e-04,)] [eta: 1 day, 0:47:50, time (data): 0.167 (0.001)] l_pix: 5.1502e-03 
+2025-05-15 02:48:52,375 INFO: Saving models and training states.
+2025-05-15 02:48:53,217 INFO: Validation ValSet,		 # psnr: 32.2927
+2025-05-15 02:51:41,920 INFO: [Gauss..][epoch: 26, iter:  73,000, lr:(2.797e-04,)] [eta: 1 day, 0:45:05, time (data): 0.169 (0.001)] l_pix: 5.5381e-03 
+2025-05-15 02:54:30,123 INFO: [Gauss..][epoch: 26, iter:  74,000, lr:(2.817e-04,)] [eta: 1 day, 0:42:09, time (data): 0.169 (0.001)] l_pix: 6.4683e-03 
+2025-05-15 02:57:18,556 INFO: [Gauss..][epoch: 27, iter:  75,000, lr:(2.836e-04,)] [eta: 1 day, 0:39:16, time (data): 0.166 (0.001)] l_pix: 3.5853e-03 
+2025-05-15 03:00:06,349 INFO: [Gauss..][epoch: 27, iter:  76,000, lr:(2.854e-04,)] [eta: 1 day, 0:36:18, time (data): 0.166 (0.001)] l_pix: 5.9961e-03 
+2025-05-15 03:00:06,350 INFO: Saving models and training states.
+2025-05-15 03:00:07,245 INFO: Validation ValSet,		 # psnr: 41.1429
+2025-05-15 03:02:55,118 INFO: [Gauss..][epoch: 27, iter:  77,000, lr:(2.872e-04,)] [eta: 1 day, 0:33:27, time (data): 0.167 (0.001)] l_pix: 8.4463e-03 
+2025-05-15 03:05:42,994 INFO: [Gauss..][epoch: 28, iter:  78,000, lr:(2.888e-04,)] [eta: 1 day, 0:30:30, time (data): 0.166 (0.001)] l_pix: 3.2006e-03 
+2025-05-15 03:08:30,267 INFO: [Gauss..][epoch: 28, iter:  79,000, lr:(2.903e-04,)] [eta: 1 day, 0:27:30, time (data): 0.165 (0.001)] l_pix: 5.3547e-03 
+2025-05-15 03:11:18,494 INFO: [Gauss..][epoch: 29, iter:  80,000, lr:(2.917e-04,)] [eta: 1 day, 0:24:36, time (data): 0.167 (0.001)] l_pix: 3.8794e-03 
+2025-05-15 03:11:18,494 INFO: Saving models and training states.
+2025-05-15 03:11:19,317 INFO: Validation ValSet,		 # psnr: 32.9543
+2025-05-15 03:14:06,637 INFO: [Gauss..][epoch: 29, iter:  81,000, lr:(2.930e-04,)] [eta: 1 day, 0:21:41, time (data): 0.166 (0.001)] l_pix: 7.0617e-03 
+2025-05-15 03:16:54,008 INFO: [Gauss..][epoch: 29, iter:  82,000, lr:(2.942e-04,)] [eta: 1 day, 0:18:42, time (data): 0.169 (0.001)] l_pix: 6.2921e-03 
+2025-05-15 03:19:42,959 INFO: [Gauss..][epoch: 30, iter:  83,000, lr:(2.953e-04,)] [eta: 1 day, 0:15:53, time (data): 0.167 (0.001)] l_pix: 5.8520e-03 
+2025-05-15 03:22:31,460 INFO: [Gauss..][epoch: 30, iter:  84,000, lr:(2.963e-04,)] [eta: 1 day, 0:13:01, time (data): 0.171 (0.001)] l_pix: 4.7554e-03 
+2025-05-15 03:22:31,460 INFO: Saving models and training states.
+2025-05-15 03:22:32,333 INFO: Validation ValSet,		 # psnr: 42.1268
+2025-05-15 03:25:21,264 INFO: [Gauss..][epoch: 30, iter:  85,000, lr:(2.972e-04,)] [eta: 1 day, 0:10:17, time (data): 0.168 (0.001)] l_pix: 4.0136e-03 
+2025-05-15 03:28:10,541 INFO: [Gauss..][epoch: 31, iter:  86,000, lr:(2.979e-04,)] [eta: 1 day, 0:07:30, time (data): 0.169 (0.001)] l_pix: 3.5666e-03 
+2025-05-15 03:30:59,629 INFO: [Gauss..][epoch: 31, iter:  87,000, lr:(2.985e-04,)] [eta: 1 day, 0:04:42, time (data): 0.169 (0.001)] l_pix: 4.8800e-03 
+2025-05-15 03:33:48,275 INFO: [Gauss..][epoch: 31, iter:  88,000, lr:(2.991e-04,)] [eta: 1 day, 0:01:51, time (data): 0.168 (0.001)] l_pix: 3.1610e-03 
+2025-05-15 03:33:48,276 INFO: Saving models and training states.
+2025-05-15 03:33:49,096 INFO: Validation ValSet,		 # psnr: 35.2021
+2025-05-15 03:36:38,613 INFO: [Gauss..][epoch: 32, iter:  89,000, lr:(2.995e-04,)] [eta: 23:59:10, time (data): 0.171 (0.001)] l_pix: 4.3640e-03 
+2025-05-15 03:39:27,237 INFO: [Gauss..][epoch: 32, iter:  90,000, lr:(2.998e-04,)] [eta: 23:56:19, time (data): 0.169 (0.001)] l_pix: 4.7397e-03 
+2025-05-15 03:42:16,846 INFO: [Gauss..][epoch: 33, iter:  91,000, lr:(2.999e-04,)] [eta: 23:53:34, time (data): 0.169 (0.001)] l_pix: 6.6338e-03 
+2025-05-15 03:45:05,854 INFO: [Gauss..][epoch: 33, iter:  92,000, lr:(3.000e-04,)] [eta: 23:50:45, time (data): 0.169 (0.001)] l_pix: 2.7430e-03 
+2025-05-15 03:45:05,854 INFO: Saving models and training states.
+2025-05-15 03:45:06,877 INFO: Validation ValSet,		 # psnr: 33.0578
+2025-05-15 03:45:06,879 INFO: 
+ Updating Patch_Size to 64 and Batch_Size to 0 
+
+2025-05-15 03:47:55,266 INFO: [Gauss..][epoch: 33, iter:  93,000, lr:(1.000e-04,)] [eta: 23:47:58, time (data): 0.166 (0.001)] l_pix: 5.3705e-03 
+2025-05-15 03:50:43,571 INFO: [Gauss..][epoch: 34, iter:  94,000, lr:(1.000e-04,)] [eta: 23:45:05, time (data): 0.166 (0.001)] l_pix: 3.8635e-03 
+2025-05-15 03:53:31,336 INFO: [Gauss..][epoch: 34, iter:  95,000, lr:(1.000e-04,)] [eta: 23:42:10, time (data): 0.167 (0.001)] l_pix: 3.1579e-03 
+2025-05-15 03:56:19,139 INFO: [Gauss..][epoch: 34, iter:  96,000, lr:(1.000e-04,)] [eta: 23:39:15, time (data): 0.167 (0.001)] l_pix: 1.6105e-03 
+2025-05-15 03:56:19,140 INFO: Saving models and training states.
+2025-05-15 03:56:19,929 INFO: Validation ValSet,		 # psnr: 35.3295
+2025-05-15 03:59:08,644 INFO: [Gauss..][epoch: 35, iter:  97,000, lr:(1.000e-04,)] [eta: 23:36:29, time (data): 0.169 (0.001)] l_pix: 6.2632e-03 
+2025-05-15 04:01:57,357 INFO: [Gauss..][epoch: 35, iter:  98,000, lr:(1.000e-04,)] [eta: 23:33:38, time (data): 0.169 (0.001)] l_pix: 8.2313e-03 
+2025-05-15 04:04:46,623 INFO: [Gauss..][epoch: 35, iter:  99,000, lr:(1.000e-04,)] [eta: 23:30:51, time (data): 0.167 (0.001)] l_pix: 5.5757e-03 
+2025-05-15 04:07:35,539 INFO: [Gauss..][epoch: 36, iter: 100,000, lr:(1.000e-04,)] [eta: 23:28:02, time (data): 0.169 (0.001)] l_pix: 7.2116e-03 
+2025-05-15 04:07:35,540 INFO: Saving models and training states.
+2025-05-15 04:07:36,411 INFO: Validation ValSet,		 # psnr: 34.3012
+2025-05-15 04:10:24,002 INFO: [Gauss..][epoch: 36, iter: 101,000, lr:(1.000e-04,)] [eta: 23:25:10, time (data): 0.166 (0.001)] l_pix: 2.8424e-03 
+2025-05-15 04:13:12,315 INFO: [Gauss..][epoch: 37, iter: 102,000, lr:(1.000e-04,)] [eta: 23:22:18, time (data): 0.166 (0.001)] l_pix: 6.2175e-03 
+2025-05-15 04:15:59,562 INFO: [Gauss..][epoch: 37, iter: 103,000, lr:(1.000e-04,)] [eta: 23:19:21, time (data): 0.165 (0.001)] l_pix: 4.4318e-03 
+2025-05-15 04:18:47,513 INFO: [Gauss..][epoch: 37, iter: 104,000, lr:(1.000e-04,)] [eta: 23:16:27, time (data): 0.167 (0.001)] l_pix: 5.8641e-03 
+2025-05-15 04:18:47,514 INFO: Saving models and training states.
+2025-05-15 04:18:48,309 INFO: Validation ValSet,		 # psnr: 41.3537
+2025-05-15 04:21:37,665 INFO: [Gauss..][epoch: 38, iter: 105,000, lr:(1.000e-04,)] [eta: 23:13:44, time (data): 0.168 (0.001)] l_pix: 6.4744e-03 
+2025-05-15 04:24:26,060 INFO: [Gauss..][epoch: 38, iter: 106,000, lr:(1.000e-04,)] [eta: 23:10:53, time (data): 0.167 (0.001)] l_pix: 3.6613e-03 
+2025-05-15 04:27:14,546 INFO: [Gauss..][epoch: 38, iter: 107,000, lr:(1.000e-04,)] [eta: 23:08:02, time (data): 0.171 (0.001)] l_pix: 1.6739e-03 
+2025-05-15 04:30:03,256 INFO: [Gauss..][epoch: 39, iter: 108,000, lr:(1.000e-04,)] [eta: 23:05:12, time (data): 0.169 (0.001)] l_pix: 4.9286e-03 
+2025-05-15 04:30:03,257 INFO: Saving models and training states.
+2025-05-15 04:30:04,189 INFO: Validation ValSet,		 # psnr: 42.1394
+2025-05-15 04:32:52,175 INFO: [Gauss..][epoch: 39, iter: 109,000, lr:(1.000e-04,)] [eta: 23:02:23, time (data): 0.168 (0.001)] l_pix: 4.8376e-03 
+2025-05-15 04:35:40,794 INFO: [Gauss..][epoch: 39, iter: 110,000, lr:(1.000e-04,)] [eta: 22:59:33, time (data): 0.168 (0.001)] l_pix: 3.7603e-03 
+2025-05-15 04:38:29,467 INFO: [Gauss..][epoch: 40, iter: 111,000, lr:(1.000e-04,)] [eta: 22:56:43, time (data): 0.167 (0.001)] l_pix: 6.4029e-03 
+2025-05-15 04:41:17,805 INFO: [Gauss..][epoch: 40, iter: 112,000, lr:(1.000e-04,)] [eta: 22:53:51, time (data): 0.167 (0.001)] l_pix: 7.9722e-03 
+2025-05-15 04:41:17,805 INFO: Saving models and training states.
+2025-05-15 04:41:18,675 INFO: Validation ValSet,		 # psnr: 44.9855
+2025-05-15 04:44:07,684 INFO: [Gauss..][epoch: 41, iter: 113,000, lr:(1.000e-04,)] [eta: 22:51:06, time (data): 0.168 (0.001)] l_pix: 3.3654e-03 
+2025-05-15 04:46:55,725 INFO: [Gauss..][epoch: 41, iter: 114,000, lr:(1.000e-04,)] [eta: 22:48:14, time (data): 0.168 (0.001)] l_pix: 5.5254e-03 
+2025-05-15 04:49:44,429 INFO: [Gauss..][epoch: 41, iter: 115,000, lr:(1.000e-04,)] [eta: 22:45:24, time (data): 0.169 (0.001)] l_pix: 4.9646e-03 
+2025-05-15 04:52:33,075 INFO: [Gauss..][epoch: 42, iter: 116,000, lr:(1.000e-04,)] [eta: 22:42:34, time (data): 0.167 (0.001)] l_pix: 4.3614e-03 
+2025-05-15 04:52:33,075 INFO: Saving models and training states.
+2025-05-15 04:52:33,908 INFO: Validation ValSet,		 # psnr: 42.7361
+2025-05-15 04:55:22,654 INFO: [Gauss..][epoch: 42, iter: 117,000, lr:(1.000e-04,)] [eta: 22:39:48, time (data): 0.169 (0.001)] l_pix: 6.7330e-03 
+2025-05-15 04:58:11,726 INFO: [Gauss..][epoch: 42, iter: 118,000, lr:(1.000e-04,)] [eta: 22:36:59, time (data): 0.168 (0.001)] l_pix: 2.6348e-03 
+2025-05-15 05:01:00,634 INFO: [Gauss..][epoch: 43, iter: 119,000, lr:(1.000e-04,)] [eta: 22:34:10, time (data): 0.167 (0.001)] l_pix: 3.9418e-03 
+2025-05-15 05:03:48,106 INFO: [Gauss..][epoch: 43, iter: 120,000, lr:(1.000e-04,)] [eta: 22:31:16, time (data): 0.164 (0.001)] l_pix: 2.4888e-03 
+2025-05-15 05:03:48,107 INFO: Saving models and training states.
+2025-05-15 05:03:48,987 INFO: Validation ValSet,		 # psnr: 45.3673
+2025-05-15 05:06:35,921 INFO: [Gauss..][epoch: 43, iter: 121,000, lr:(1.000e-04,)] [eta: 22:28:22, time (data): 0.167 (0.001)] l_pix: 5.0582e-03 
+2025-05-15 05:09:24,438 INFO: [Gauss..][epoch: 44, iter: 122,000, lr:(1.000e-04,)] [eta: 22:25:32, time (data): 0.169 (0.001)] l_pix: 4.3329e-03 
+2025-05-15 05:12:12,179 INFO: [Gauss..][epoch: 44, iter: 123,000, lr:(1.000e-04,)] [eta: 22:22:39, time (data): 0.169 (0.001)] l_pix: 4.7190e-03 
+2025-05-15 05:15:00,484 INFO: [Gauss..][epoch: 45, iter: 124,000, lr:(1.000e-04,)] [eta: 22:19:47, time (data): 0.169 (0.001)] l_pix: 7.3827e-03 
+2025-05-15 05:15:00,485 INFO: Saving models and training states.
+2025-05-15 05:15:01,290 INFO: Validation ValSet,		 # psnr: 41.9933
+2025-05-15 05:17:49,716 INFO: [Gauss..][epoch: 45, iter: 125,000, lr:(1.000e-04,)] [eta: 22:17:00, time (data): 0.168 (0.001)] l_pix: 3.8093e-03 
+2025-05-15 05:20:38,153 INFO: [Gauss..][epoch: 45, iter: 126,000, lr:(1.000e-04,)] [eta: 22:14:09, time (data): 0.168 (0.001)] l_pix: 7.3806e-03 
+2025-05-15 05:23:27,105 INFO: [Gauss..][epoch: 46, iter: 127,000, lr:(1.000e-04,)] [eta: 22:11:21, time (data): 0.167 (0.001)] l_pix: 5.0223e-03 
+2025-05-15 05:26:15,447 INFO: [Gauss..][epoch: 46, iter: 128,000, lr:(1.000e-04,)] [eta: 22:08:30, time (data): 0.170 (0.001)] l_pix: 4.3629e-03 
+2025-05-15 05:26:15,447 INFO: Saving models and training states.
+2025-05-15 05:26:16,295 INFO: Validation ValSet,		 # psnr: 44.1537
+2025-05-15 05:29:04,389 INFO: [Gauss..][epoch: 46, iter: 129,000, lr:(1.000e-04,)] [eta: 22:05:41, time (data): 0.167 (0.001)] l_pix: 6.2438e-03 
+2025-05-15 05:31:53,556 INFO: [Gauss..][epoch: 47, iter: 130,000, lr:(1.000e-04,)] [eta: 22:02:53, time (data): 0.169 (0.001)] l_pix: 3.3581e-03 
+2025-05-15 05:34:42,673 INFO: [Gauss..][epoch: 47, iter: 131,000, lr:(1.000e-04,)] [eta: 22:00:05, time (data): 0.170 (0.001)] l_pix: 3.4359e-03 
+2025-05-15 05:37:31,893 INFO: [Gauss..][epoch: 47, iter: 132,000, lr:(1.000e-04,)] [eta: 21:57:18, time (data): 0.167 (0.001)] l_pix: 3.3023e-03 
+2025-05-15 05:37:31,893 INFO: Saving models and training states.
+2025-05-15 05:37:32,754 INFO: Validation ValSet,		 # psnr: 41.1081
+2025-05-15 05:40:22,667 INFO: [Gauss..][epoch: 48, iter: 133,000, lr:(1.000e-04,)] [eta: 21:54:35, time (data): 0.167 (0.001)] l_pix: 1.8053e-03 
+2025-05-15 05:43:11,575 INFO: [Gauss..][epoch: 48, iter: 134,000, lr:(1.000e-04,)] [eta: 21:51:46, time (data): 0.171 (0.001)] l_pix: 2.1885e-03 
+2025-05-15 05:46:00,890 INFO: [Gauss..][epoch: 49, iter: 135,000, lr:(1.000e-04,)] [eta: 21:48:59, time (data): 0.168 (0.001)] l_pix: 3.9016e-03 
+2025-05-15 05:48:49,053 INFO: [Gauss..][epoch: 49, iter: 136,000, lr:(1.000e-04,)] [eta: 21:46:08, time (data): 0.168 (0.001)] l_pix: 7.7775e-03 
+2025-05-15 05:48:49,053 INFO: Saving models and training states.
+2025-05-15 05:48:49,847 INFO: Validation ValSet,		 # psnr: 42.4352
+2025-05-15 05:51:37,519 INFO: [Gauss..][epoch: 49, iter: 137,000, lr:(1.000e-04,)] [eta: 21:43:17, time (data): 0.165 (0.001)] l_pix: 4.8039e-03 
+2025-05-15 05:54:26,033 INFO: [Gauss..][epoch: 50, iter: 138,000, lr:(1.000e-04,)] [eta: 21:40:27, time (data): 0.167 (0.001)] l_pix: 7.2782e-03 
+2025-05-15 05:57:14,926 INFO: [Gauss..][epoch: 50, iter: 139,000, lr:(1.000e-04,)] [eta: 21:37:38, time (data): 0.168 (0.001)] l_pix: 6.0310e-03 
+2025-05-15 06:00:03,234 INFO: [Gauss..][epoch: 50, iter: 140,000, lr:(1.000e-04,)] [eta: 21:34:47, time (data): 0.167 (0.001)] l_pix: 2.9103e-03 
+2025-05-15 06:00:03,235 INFO: Saving models and training states.
+2025-05-15 06:00:04,071 INFO: Validation ValSet,		 # psnr: 33.9000
+2025-05-15 06:02:52,397 INFO: [Gauss..][epoch: 51, iter: 141,000, lr:(1.000e-04,)] [eta: 21:31:59, time (data): 0.168 (0.001)] l_pix: 2.9850e-03 
+2025-05-15 06:05:40,236 INFO: [Gauss..][epoch: 51, iter: 142,000, lr:(1.000e-04,)] [eta: 21:29:07, time (data): 0.166 (0.001)] l_pix: 2.8478e-03 
+2025-05-15 06:08:28,075 INFO: [Gauss..][epoch: 51, iter: 143,000, lr:(1.000e-04,)] [eta: 21:26:15, time (data): 0.169 (0.001)] l_pix: 4.7851e-03 
+2025-05-15 06:11:16,148 INFO: [Gauss..][epoch: 52, iter: 144,000, lr:(1.000e-04,)] [eta: 21:23:23, time (data): 0.166 (0.001)] l_pix: 3.2798e-03 
+2025-05-15 06:11:16,149 INFO: Saving models and training states.
+2025-05-15 06:11:17,020 INFO: Validation ValSet,		 # psnr: 31.5927
+2025-05-15 06:14:04,561 INFO: [Gauss..][epoch: 52, iter: 145,000, lr:(1.000e-04,)] [eta: 21:20:33, time (data): 0.165 (0.001)] l_pix: 9.8997e-03 
+2025-05-15 06:16:52,398 INFO: [Gauss..][epoch: 53, iter: 146,000, lr:(1.000e-04,)] [eta: 21:17:41, time (data): 0.170 (0.001)] l_pix: 8.8627e-03 
+2025-05-15 06:19:40,898 INFO: [Gauss..][epoch: 53, iter: 147,000, lr:(1.000e-04,)] [eta: 21:14:51, time (data): 0.169 (0.001)] l_pix: 3.2925e-03 
+2025-05-15 06:22:29,135 INFO: [Gauss..][epoch: 53, iter: 148,000, lr:(1.000e-04,)] [eta: 21:12:00, time (data): 0.167 (0.001)] l_pix: 7.4774e-03 
+2025-05-15 06:22:29,136 INFO: Saving models and training states.
+2025-05-15 06:22:29,980 INFO: Validation ValSet,		 # psnr: 42.8968
+2025-05-15 06:25:19,276 INFO: [Gauss..][epoch: 54, iter: 149,000, lr:(1.000e-04,)] [eta: 21:09:15, time (data): 0.169 (0.001)] l_pix: 4.5163e-03 
+2025-05-15 06:28:07,325 INFO: [Gauss..][epoch: 54, iter: 150,000, lr:(1.000e-04,)] [eta: 21:06:24, time (data): 0.166 (0.001)] l_pix: 7.3362e-03 
+2025-05-15 06:30:55,257 INFO: [Gauss..][epoch: 54, iter: 151,000, lr:(1.000e-04,)] [eta: 21:03:33, time (data): 0.169 (0.001)] l_pix: 3.0907e-03 
+2025-05-15 06:33:44,453 INFO: [Gauss..][epoch: 55, iter: 152,000, lr:(1.000e-04,)] [eta: 21:00:45, time (data): 0.169 (0.001)] l_pix: 4.1040e-03 
+2025-05-15 06:33:44,454 INFO: Saving models and training states.
+2025-05-15 06:33:45,370 INFO: Validation ValSet,		 # psnr: 36.8558
+2025-05-15 06:36:34,376 INFO: [Gauss..][epoch: 55, iter: 153,000, lr:(1.000e-04,)] [eta: 20:57:59, time (data): 0.168 (0.001)] l_pix: 5.9858e-03 
+2025-05-15 06:39:22,772 INFO: [Gauss..][epoch: 55, iter: 154,000, lr:(1.000e-04,)] [eta: 20:55:09, time (data): 0.166 (0.001)] l_pix: 4.7329e-03 
+2025-05-15 06:42:11,636 INFO: [Gauss..][epoch: 56, iter: 155,000, lr:(1.000e-04,)] [eta: 20:52:20, time (data): 0.169 (0.001)] l_pix: 6.8859e-03 
+2025-05-15 06:44:59,768 INFO: [Gauss..][epoch: 56, iter: 156,000, lr:(1.000e-04,)] [eta: 20:49:29, time (data): 0.167 (0.001)] l_pix: 8.8936e-03 
+2025-05-15 06:44:59,769 INFO: Saving models and training states.
+2025-05-15 06:45:00,607 INFO: Validation ValSet,		 # psnr: 40.3547
+2025-05-15 06:45:00,608 INFO: 
+ Updating Patch_Size to 64 and Batch_Size to 0 
+
+2025-05-15 06:47:49,357 INFO: [Gauss..][epoch: 57, iter: 157,000, lr:(1.000e-04,)] [eta: 20:46:42, time (data): 0.171 (0.001)] l_pix: 5.1044e-03 
+2025-05-15 06:50:38,773 INFO: [Gauss..][epoch: 57, iter: 158,000, lr:(1.000e-04,)] [eta: 20:43:55, time (data): 0.170 (0.001)] l_pix: 2.2060e-03 
+2025-05-15 06:53:27,627 INFO: [Gauss..][epoch: 57, iter: 159,000, lr:(1.000e-04,)] [eta: 20:41:06, time (data): 0.168 (0.001)] l_pix: 3.4334e-03 
+2025-05-15 06:56:16,310 INFO: [Gauss..][epoch: 58, iter: 160,000, lr:(1.000e-04,)] [eta: 20:38:17, time (data): 0.168 (0.001)] l_pix: 3.0601e-03 
+2025-05-15 06:56:16,311 INFO: Saving models and training states.
+2025-05-15 06:56:17,159 INFO: Validation ValSet,		 # psnr: 42.1660
+2025-05-15 06:59:05,395 INFO: [Gauss..][epoch: 58, iter: 161,000, lr:(1.000e-04,)] [eta: 20:35:29, time (data): 0.169 (0.001)] l_pix: 5.4520e-03 
+2025-05-15 07:01:53,905 INFO: [Gauss..][epoch: 58, iter: 162,000, lr:(1.000e-04,)] [eta: 20:32:39, time (data): 0.167 (0.001)] l_pix: 5.5824e-03 
+2025-05-15 07:04:42,854 INFO: [Gauss..][epoch: 59, iter: 163,000, lr:(1.000e-04,)] [eta: 20:29:50, time (data): 0.169 (0.001)] l_pix: 1.0069e-02 
+2025-05-15 07:07:31,411 INFO: [Gauss..][epoch: 59, iter: 164,000, lr:(1.000e-04,)] [eta: 20:27:00, time (data): 0.170 (0.001)] l_pix: 4.9397e-03 
+2025-05-15 07:07:31,412 INFO: Saving models and training states.
+2025-05-15 07:07:32,302 INFO: Validation ValSet,		 # psnr: 34.6474
+2025-05-15 07:10:21,484 INFO: [Gauss..][epoch: 59, iter: 165,000, lr:(1.000e-04,)] [eta: 20:24:15, time (data): 0.169 (0.001)] l_pix: 4.2953e-03 
+2025-05-15 07:13:10,092 INFO: [Gauss..][epoch: 60, iter: 166,000, lr:(1.000e-04,)] [eta: 20:21:25, time (data): 0.167 (0.001)] l_pix: 2.5960e-03 
+2025-05-15 07:15:58,289 INFO: [Gauss..][epoch: 60, iter: 167,000, lr:(1.000e-04,)] [eta: 20:18:35, time (data): 0.169 (0.001)] l_pix: 4.9463e-03 
+2025-05-15 07:18:46,751 INFO: [Gauss..][epoch: 61, iter: 168,000, lr:(1.000e-04,)] [eta: 20:15:45, time (data): 0.169 (0.001)] l_pix: 5.2033e-03 
+2025-05-15 07:18:46,752 INFO: Saving models and training states.
+2025-05-15 07:18:47,679 INFO: Validation ValSet,		 # psnr: 34.9548
+2025-05-15 07:21:36,933 INFO: [Gauss..][epoch: 61, iter: 169,000, lr:(1.000e-04,)] [eta: 20:12:59, time (data): 0.170 (0.001)] l_pix: 7.1931e-03 
+2025-05-15 07:24:26,091 INFO: [Gauss..][epoch: 61, iter: 170,000, lr:(1.000e-04,)] [eta: 20:10:11, time (data): 0.169 (0.001)] l_pix: 2.8714e-03 
+2025-05-15 07:27:15,613 INFO: [Gauss..][epoch: 62, iter: 171,000, lr:(1.000e-04,)] [eta: 20:07:24, time (data): 0.167 (0.001)] l_pix: 1.0423e-02 
+2025-05-15 07:30:03,905 INFO: [Gauss..][epoch: 62, iter: 172,000, lr:(1.000e-04,)] [eta: 20:04:34, time (data): 0.168 (0.001)] l_pix: 3.8263e-03 
+2025-05-15 07:30:03,906 INFO: Saving models and training states.
+2025-05-15 07:30:04,749 INFO: Validation ValSet,		 # psnr: 40.2999
+2025-05-15 07:32:52,947 INFO: [Gauss..][epoch: 62, iter: 173,000, lr:(1.000e-04,)] [eta: 20:01:45, time (data): 0.166 (0.001)] l_pix: 2.0462e-03 
+2025-05-15 07:35:41,912 INFO: [Gauss..][epoch: 63, iter: 174,000, lr:(1.000e-04,)] [eta: 19:58:57, time (data): 0.170 (0.001)] l_pix: 3.6226e-03 
+2025-05-15 07:38:30,330 INFO: [Gauss..][epoch: 63, iter: 175,000, lr:(1.000e-04,)] [eta: 19:56:07, time (data): 0.168 (0.001)] l_pix: 2.8121e-03 
+2025-05-15 07:41:18,743 INFO: [Gauss..][epoch: 63, iter: 176,000, lr:(1.000e-04,)] [eta: 19:53:17, time (data): 0.166 (0.001)] l_pix: 2.4576e-03 
+2025-05-15 07:41:18,744 INFO: Saving models and training states.
+2025-05-15 07:41:19,598 INFO: Validation ValSet,		 # psnr: 48.7266
+2025-05-15 07:44:07,635 INFO: [Gauss..][epoch: 64, iter: 177,000, lr:(1.000e-04,)] [eta: 19:50:28, time (data): 0.165 (0.001)] l_pix: 5.0723e-03 
+2025-05-15 07:46:55,199 INFO: [Gauss..][epoch: 64, iter: 178,000, lr:(1.000e-04,)] [eta: 19:47:36, time (data): 0.169 (0.001)] l_pix: 7.0071e-03 
+2025-05-15 07:49:43,564 INFO: [Gauss..][epoch: 65, iter: 179,000, lr:(1.000e-04,)] [eta: 19:44:46, time (data): 0.167 (0.001)] l_pix: 3.8888e-03 
+2025-05-15 07:52:31,236 INFO: [Gauss..][epoch: 65, iter: 180,000, lr:(1.000e-04,)] [eta: 19:41:54, time (data): 0.167 (0.001)] l_pix: 2.2420e-03 
+2025-05-15 07:52:31,237 INFO: Saving models and training states.
+2025-05-15 07:52:32,085 INFO: Validation ValSet,		 # psnr: 38.6036
+2025-05-15 07:55:19,621 INFO: [Gauss..][epoch: 65, iter: 181,000, lr:(1.000e-04,)] [eta: 19:39:05, time (data): 0.166 (0.001)] l_pix: 4.7050e-03 
+2025-05-15 07:58:08,558 INFO: [Gauss..][epoch: 66, iter: 182,000, lr:(1.000e-04,)] [eta: 19:36:16, time (data): 0.168 (0.001)] l_pix: 3.7715e-03 
+2025-05-15 08:00:57,597 INFO: [Gauss..][epoch: 66, iter: 183,000, lr:(1.000e-04,)] [eta: 19:33:28, time (data): 0.170 (0.001)] l_pix: 3.1086e-03 
+2025-05-15 08:03:46,910 INFO: [Gauss..][epoch: 66, iter: 184,000, lr:(1.000e-04,)] [eta: 19:30:40, time (data): 0.169 (0.001)] l_pix: 2.6372e-03 
+2025-05-15 08:03:46,911 INFO: Saving models and training states.
+2025-05-15 08:03:47,786 INFO: Validation ValSet,		 # psnr: 39.6783
+2025-05-15 08:06:34,099 INFO: [Gauss..][epoch: 67, iter: 185,000, lr:(1.000e-04,)] [eta: 19:27:47, time (data): 0.165 (0.001)] l_pix: 4.0460e-03 
+2025-05-15 08:09:19,608 INFO: [Gauss..][epoch: 67, iter: 186,000, lr:(1.000e-04,)] [eta: 19:24:51, time (data): 0.166 (0.001)] l_pix: 4.2890e-03 
+2025-05-15 08:12:05,882 INFO: [Gauss..][epoch: 67, iter: 187,000, lr:(1.000e-04,)] [eta: 19:21:56, time (data): 0.166 (0.001)] l_pix: 4.3360e-03 
+2025-05-15 08:14:51,872 INFO: [Gauss..][epoch: 68, iter: 188,000, lr:(1.000e-04,)] [eta: 19:19:01, time (data): 0.166 (0.001)] l_pix: 8.5619e-03 
+2025-05-15 08:14:51,873 INFO: Saving models and training states.
+2025-05-15 08:14:52,836 INFO: Validation ValSet,		 # psnr: 44.7926
+2025-05-15 08:17:39,054 INFO: [Gauss..][epoch: 68, iter: 189,000, lr:(1.000e-04,)] [eta: 19:16:09, time (data): 0.166 (0.001)] l_pix: 3.2696e-03 
+2025-05-15 08:20:25,709 INFO: [Gauss..][epoch: 69, iter: 190,000, lr:(1.000e-04,)] [eta: 19:13:16, time (data): 0.166 (0.001)] l_pix: 7.8196e-03 
+2025-05-15 08:23:11,842 INFO: [Gauss..][epoch: 69, iter: 191,000, lr:(1.000e-04,)] [eta: 19:10:21, time (data): 0.166 (0.001)] l_pix: 1.1614e-02 
+2025-05-15 08:25:58,202 INFO: [Gauss..][epoch: 69, iter: 192,000, lr:(1.000e-04,)] [eta: 19:07:28, time (data): 0.166 (0.001)] l_pix: 4.8321e-03 
+2025-05-15 08:25:58,203 INFO: Saving models and training states.
+2025-05-15 08:25:59,121 INFO: Validation ValSet,		 # psnr: 45.0753
+2025-05-15 08:28:45,886 INFO: [Gauss..][epoch: 70, iter: 193,000, lr:(1.000e-04,)] [eta: 19:04:37, time (data): 0.167 (0.001)] l_pix: 1.0756e-02 
+2025-05-15 08:31:32,095 INFO: [Gauss..][epoch: 70, iter: 194,000, lr:(1.000e-04,)] [eta: 19:01:43, time (data): 0.166 (0.001)] l_pix: 7.5237e-03 
+2025-05-15 08:34:18,495 INFO: [Gauss..][epoch: 70, iter: 195,000, lr:(1.000e-04,)] [eta: 18:58:49, time (data): 0.167 (0.001)] l_pix: 6.2430e-03 
+2025-05-15 08:37:04,446 INFO: [Gauss..][epoch: 71, iter: 196,000, lr:(1.000e-04,)] [eta: 18:55:55, time (data): 0.164 (0.001)] l_pix: 2.7114e-03 
+2025-05-15 08:37:04,446 INFO: Saving models and training states.
+2025-05-15 08:37:05,292 INFO: Validation ValSet,		 # psnr: 29.4820
+2025-05-15 08:39:50,385 INFO: [Gauss..][epoch: 71, iter: 197,000, lr:(1.000e-04,)] [eta: 18:53:00, time (data): 0.165 (0.001)] l_pix: 5.1579e-03 
+2025-05-15 08:42:35,798 INFO: [Gauss..][epoch: 71, iter: 198,000, lr:(1.000e-04,)] [eta: 18:50:05, time (data): 0.165 (0.001)] l_pix: 1.6778e-03 
+2025-05-15 08:45:21,146 INFO: [Gauss..][epoch: 72, iter: 199,000, lr:(1.000e-04,)] [eta: 18:47:09, time (data): 0.165 (0.001)] l_pix: 2.0434e-03 
+2025-05-15 08:48:06,105 INFO: [Gauss..][epoch: 72, iter: 200,000, lr:(1.000e-04,)] [eta: 18:44:13, time (data): 0.165 (0.001)] l_pix: 6.0812e-03 
+2025-05-15 08:48:06,106 INFO: Saving models and training states.
+2025-05-15 08:48:06,970 INFO: Validation ValSet,		 # psnr: 33.7815
+2025-05-15 08:50:52,457 INFO: [Gauss..][epoch: 73, iter: 201,000, lr:(1.000e-04,)] [eta: 18:41:20, time (data): 0.165 (0.001)] l_pix: 1.8286e-03 
+2025-05-15 08:53:37,103 INFO: [Gauss..][epoch: 73, iter: 202,000, lr:(1.000e-04,)] [eta: 18:38:24, time (data): 0.164 (0.001)] l_pix: 4.7231e-03 
+2025-05-15 08:56:22,708 INFO: [Gauss..][epoch: 73, iter: 203,000, lr:(1.000e-04,)] [eta: 18:35:29, time (data): 0.166 (0.001)] l_pix: 2.9028e-03 
+2025-05-15 08:59:08,896 INFO: [Gauss..][epoch: 74, iter: 204,000, lr:(1.000e-04,)] [eta: 18:32:36, time (data): 0.165 (0.001)] l_pix: 4.2233e-03 
+2025-05-15 08:59:08,897 INFO: Saving models and training states.
+2025-05-15 08:59:09,807 INFO: Validation ValSet,		 # psnr: 42.3438
+2025-05-15 08:59:09,808 INFO: 
+ Updating Patch_Size to 128 and Batch_Size to 0 
+
+2025-05-15 09:06:29,920 INFO: [Gauss..][epoch: 74, iter: 205,000, lr:(1.000e-04,)] [eta: 18:38:32, time (data): 0.438 (0.001)] l_pix: 5.4922e-03 
+2025-05-15 09:13:48,063 INFO: [Gauss..][epoch: 74, iter: 206,000, lr:(1.000e-04,)] [eta: 18:44:16, time (data): 0.438 (0.001)] l_pix: 2.6276e-03 
+2025-05-15 09:21:06,672 INFO: [Gauss..][epoch: 75, iter: 207,000, lr:(1.000e-04,)] [eta: 18:49:52, time (data): 0.438 (0.001)] l_pix: 5.1663e-03 
+2025-05-15 09:28:24,694 INFO: [Gauss..][epoch: 75, iter: 208,000, lr:(1.000e-04,)] [eta: 18:55:20, time (data): 0.438 (0.001)] l_pix: 3.9779e-03 
+2025-05-15 09:28:24,695 INFO: Saving models and training states.
+2025-05-15 09:28:25,581 INFO: Validation ValSet,		 # psnr: 33.3268
+2025-05-15 09:35:43,588 INFO: [Gauss..][epoch: 75, iter: 209,000, lr:(1.000e-04,)] [eta: 19:00:42, time (data): 0.438 (0.001)] l_pix: 3.5971e-03 
+2025-05-15 09:43:02,196 INFO: [Gauss..][epoch: 76, iter: 210,000, lr:(1.000e-04,)] [eta: 19:05:57, time (data): 0.438 (0.001)] l_pix: 3.1195e-03 
+2025-05-15 09:50:20,151 INFO: [Gauss..][epoch: 76, iter: 211,000, lr:(1.000e-04,)] [eta: 19:11:03, time (data): 0.438 (0.001)] l_pix: 2.9712e-03 
+2025-05-15 09:57:38,686 INFO: [Gauss..][epoch: 77, iter: 212,000, lr:(1.000e-04,)] [eta: 19:16:03, time (data): 0.438 (0.001)] l_pix: 2.7132e-03 
+2025-05-15 09:57:38,687 INFO: Saving models and training states.
+2025-05-15 09:57:39,789 INFO: Validation ValSet,		 # psnr: 28.6561
+2025-05-15 10:04:57,859 INFO: [Gauss..][epoch: 77, iter: 213,000, lr:(1.000e-04,)] [eta: 19:20:57, time (data): 0.438 (0.001)] l_pix: 3.3307e-03 
+2025-05-15 10:12:16,644 INFO: [Gauss..][epoch: 77, iter: 214,000, lr:(1.000e-04,)] [eta: 19:25:44, time (data): 0.440 (0.001)] l_pix: 3.6179e-03 
+2025-05-15 10:19:36,502 INFO: [Gauss..][epoch: 78, iter: 215,000, lr:(1.000e-04,)] [eta: 19:30:26, time (data): 0.439 (0.001)] l_pix: 2.5258e-03 
+2025-05-15 10:26:55,842 INFO: [Gauss..][epoch: 78, iter: 216,000, lr:(1.000e-04,)] [eta: 19:35:00, time (data): 0.439 (0.001)] l_pix: 3.0432e-03 
+2025-05-15 10:26:55,842 INFO: Saving models and training states.
+2025-05-15 10:26:56,655 INFO: Validation ValSet,		 # psnr: 31.8887
+2025-05-15 10:34:15,864 INFO: [Gauss..][epoch: 78, iter: 217,000, lr:(1.000e-04,)] [eta: 19:39:29, time (data): 0.438 (0.001)] l_pix: 3.1230e-03 
+2025-05-15 10:41:35,626 INFO: [Gauss..][epoch: 79, iter: 218,000, lr:(1.000e-04,)] [eta: 19:43:51, time (data): 0.439 (0.002)] l_pix: 4.1118e-03 
+2025-05-15 10:48:54,868 INFO: [Gauss..][epoch: 79, iter: 219,000, lr:(1.000e-04,)] [eta: 19:48:06, time (data): 0.439 (0.001)] l_pix: 2.9947e-03 
+2025-05-15 10:56:14,171 INFO: [Gauss..][epoch: 79, iter: 220,000, lr:(1.000e-04,)] [eta: 19:52:14, time (data): 0.439 (0.001)] l_pix: 3.3006e-03 
+2025-05-15 10:56:14,172 INFO: Saving models and training states.
+2025-05-15 10:56:15,093 INFO: Validation ValSet,		 # psnr: 25.7539
+2025-05-15 11:03:34,840 INFO: [Gauss..][epoch: 80, iter: 221,000, lr:(1.000e-04,)] [eta: 19:56:19, time (data): 0.440 (0.001)] l_pix: 4.9015e-03 
+2025-05-15 11:10:54,002 INFO: [Gauss..][epoch: 80, iter: 222,000, lr:(1.000e-04,)] [eta: 20:00:15, time (data): 0.440 (0.001)] l_pix: 2.9780e-03 
+2025-05-15 11:18:13,758 INFO: [Gauss..][epoch: 81, iter: 223,000, lr:(1.000e-04,)] [eta: 20:04:06, time (data): 0.439 (0.001)] l_pix: 2.6470e-03 
+slurmstepd: error: *** JOB 15504130 ON holygpu7c26106 CANCELLED AT 2025-05-15T11:25:22 DUE TO TIME LIMIT ***

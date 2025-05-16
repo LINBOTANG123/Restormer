@@ -1,5 +1,5 @@
 # general settings
-name: GaussianGrayDenoising_RestormerSigma_smooth
+name: train_scratch_csm
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode

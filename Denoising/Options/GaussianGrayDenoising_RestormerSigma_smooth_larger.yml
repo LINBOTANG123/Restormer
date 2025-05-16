@@ -1,8 +1,10 @@
 # general settings
-name: GaussianGrayDenoising_RestormerSigma_smooth
+name: GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8
 model_type: ImageCleanModel
 scale: 1
-num_gpu: 1  # set num_gpu: 0 for cpu mode
+num_gpu: 4  # set num_gpu: 0 for cpu mode
+dist: true          # <--- ADDED
+world_size: 4       # <--- ADDED
 manual_seed: 42
 
 # dataset and data loader settings
@@ -34,13 +36,13 @@ datasets:
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 4
-    batch_size_per_gpu: 4
+    batch_size_per_gpu: 8
 
     ### -------------Progressive training--------------------------
-    mini_batch_sizes: [4, 4, 4, 4, 4, 4, 4]  # Align with the length of `iters`
+    mini_batch_sizes: [8, 8, 8, 8, 8, 8, 8]  # Align with the length of `iters`
     iters: [92000, 64000, 48000, 36000, 36000, 24000, 200000, 100000]
     gt_size: 146   # Max patch size for progressive training
-    gt_sizes: [64, 64, 64, 128, 128, 128, 64, 128]  # Align with the length of `iters`
+    gt_sizes: [128, 128, 128, 128, 128, 128, 128, 128]  # Align with the length of `iters`
     ### ------------------------------------------------------------
 
     ### ------- Training on single fixed-patch size 128x128---------

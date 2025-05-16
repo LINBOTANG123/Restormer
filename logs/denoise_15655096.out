@@ -1,0 +1,5 @@
+Disable distributed.
+USE CSM:  False
+USE CSM:  True
+ load net keys <built-in method keys of collections.OrderedDict object at 0x146d00df57a0>
+ load net keys <built-in method keys of collections.OrderedDict object at 0x146d08d46170>

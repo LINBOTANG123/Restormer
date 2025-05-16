@@ -1,0 +1,21 @@
+Disable distributed.
+ load net keys <built-in method keys of collections.OrderedDict object at 0x1547f00777a0>
+ load net keys <built-in method keys of collections.OrderedDict object at 0x1547f356f170>
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.01717432774603367 0.2473076581954956
+Combined result min/max before normalization: -0.01717432774603367 0.2473076581954956
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.01977423205971718 0.1082625687122345
+Combined result min/max before normalization: -0.01977423205971718 0.1082625687122345
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.13841763138771057 0.8907581567764282
+Combined result min/max before normalization: 0.13841763138771057 0.8907581567764282
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
