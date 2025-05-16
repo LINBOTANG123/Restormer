@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io as sio
 import h5py
+import nibabel as nib
 
 def process_noise_kspace_to_img(kspace_2d):
     """
@@ -43,7 +44,12 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
     noise_imgspace : np.ndarray, shape (H, W, num_coils, noise_slices)
         The magnitude images of pure noise, ready for replication or mapping.
     """
-    # 1) Load raw data
+    if data_format == 'simulate':
+        img = nib.load(mat_path)
+        arr = img.get_fdata().astype(np.float32)    # shape (X,Y,Z,coils)
+        # reorder to (X, Y, coils, Z)
+        return np.transpose(arr, (0, 1, 3, 2))
+
     if h5py.is_hdf5(mat_path):
         with h5py.File(mat_path, 'r') as f:
             if key not in f:
@@ -64,9 +70,21 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
             raw = raw[fields[0]]
 
     # 3) Reorder per format
-    if data_format in ['Hwihun_phantom', 'b1000', 'C']:
-        # Expect raw shape: (H, W, num_coils, noise_slices)
-        data = raw
+    if data_format in ['Hwihun_phantom','b1000']:
+        # raw might be 4D (H,W,coils,slices) or
+        #         5D (slices, samples, coils, H, W)
+        if raw.ndim == 4:
+            # already (H, W, coils, slices)
+            data = raw
+        elif raw.ndim == 5:
+            S, N, C, H, W = raw.shape
+            if N != 1:
+                raise ValueError(f"Expected single-sample noise, got N={N}")
+            # drop the samples axis, then permute
+            tmp = raw[:,0,...]               # (slices, coils, H, W)
+            data = np.transpose(tmp, (2, 3, 1, 0))  # → (H, W, coils, slices)
+        else:
+            raise ValueError(f"Unexpected noise shape {raw.shape} for format {data_format}")
     elif data_format == 'gslider':
         # Expect raw shape: (num_coils, noise_slices, H, W)
         if raw.ndim != 4:
@@ -198,37 +216,3 @@ def replicate_noise_map_with_sampling(noise_imgspace, target_H, target_W, target
 
     return expanded_noise
 
-if __name__ == "__main__":
-    import argparse
-    import os
-    import nibabel as nib
-
-    parser = argparse.ArgumentParser(
-        description="Load pure-noise k-space, convert via IFFT, and save as 4D NIfTI."
-    )
-    parser.add_argument("mat_path", help="Path to .mat or HDF5 file containing noise data")
-    parser.add_argument("--key", default="k_gc", help="Dataset key in the file")
-    parser.add_argument(
-        "--format", dest="data_format", default="b1000",
-        choices=["Hwihun_phantom","b1000","C","gslider"],
-        help="Data format of noise ('gslider' uses key 'image')"
-    )
-    parser.add_argument(
-        "--output", "-o", default="noise.nii",
-        help="Filename for output NIfTI"
-    )
-    args = parser.parse_args()
-
-    print(f"Loading noise data from {args.mat_path!r} (key={args.key}, format={args.data_format})...")
-    noise_img = load_noise_data(
-        mat_path=args.mat_path,
-        key=args.key,
-        data_format=args.data_format
-    )
-    print("Noise image-space shape:", noise_img.shape)
-
-    # Save as NIfTI (4D)
-    affine = np.eye(4)
-    nii = nib.Nifti1Image(noise_img.astype(np.float32), affine)
-    nib.save(nii, args.output)
-    print(f"Saved noise NIfTI to {args.output}")

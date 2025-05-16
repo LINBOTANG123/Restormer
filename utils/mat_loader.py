@@ -51,7 +51,15 @@ def load_mri_data(
     mri_img : np.ndarray
         Array of shape (H, W, coils, slices, samples) with float32 magnitudes.
     """
-    # 1) Load raw_data
+    if data_format == 'simulate':
+        import nibabel as nib
+        img = nib.load(file_path)
+        arr = img.get_fdata().astype(np.float32)       # shape: (X, Y, Z, coils)
+        # reorder to (X, Y, coils, Z)
+        data = np.transpose(arr, (0, 1, 3, 2))
+        # add singleton samples axis → (X, Y, coils, Z, 1)
+        return data[..., np.newaxis]
+    
     if h5py.is_hdf5(file_path):
         with h5py.File(file_path, 'r') as f:
             if key not in f:
@@ -73,9 +81,24 @@ def load_mri_data(
 
     # 3) Reorder per format
     if data_format == 'Hwihun_phantom':
-        data = np.transpose(raw_data, (3, 4, 0, 2, 1))
+        # raw shape: (coils, samples, slices, H, W)
+        if num_samples_to_load is not None:
+            raw = raw_data[:, :num_samples_to_load, ...]
+        # → (H, W, coils, slices, samples)
+        data = np.transpose(raw, (3,4,0,2,1))
+
     elif data_format == 'b1000':
-        data = np.transpose(raw_data, (3, 4, 2, 0, 1))
+        # raw_data shape: (slices, samples, coils, H, W)
+        if num_samples_to_load is not None:
+            raw = raw_data[:, :num_samples_to_load, ...]
+        else:
+            raw = raw_data
+        # permute to (H, W, coils, slices, samples)
+        data = np.transpose(raw, (3,4,2,0,1))
+
+        # **SPECIAL-CASE**: already in image space → just magnitude & cast
+        # data is (H, W, coils, slices, samples)
+        return np.abs(data).astype(np.float32)
     elif data_format == 'C':
         data = raw_data
     elif data_format == 'gslider':
@@ -104,53 +127,3 @@ def load_mri_data(
                 mri_img[:, :, c, s, n] = process_kspace_to_img(data[:, :, c, s, n])
 
     return mri_img
-
-
-if __name__ == "__main__":
-    import argparse
-    import os
-    import nibabel as nib
-
-    parser = argparse.ArgumentParser(
-        description="Load MRI k-space/gSlider data, convert to magnitudes via IFFT, and save one DWI as 4D NIfTI."
-    )
-    parser.add_argument("file_path", help="Path to .mat/HDF5 file")
-    parser.add_argument("--key", default="image", help="Dataset key in file")
-    parser.add_argument(
-        "--format", dest="data_format", default="b1000",
-        choices=["Hwihun_phantom","b1000","C","gslider"],
-        help="Data format; 'gslider' for 6D gSlider data"
-    )
-    parser.add_argument(
-        "--num-samples", type=int, default=None,
-        help="Limit number of DWI channels"
-    )
-    parser.add_argument(
-        "--gslider-index", type=int, default=0,
-        help="Which gSlider encoding to select"
-    )
-    args = parser.parse_args()
-
-    print(f"Loading format={args.data_format!r}, key={args.key!r} from {args.file_path!r}")
-    vol = load_mri_data(
-        file_path=args.file_path,
-        key=args.key,
-        data_format=args.data_format,
-        num_samples_to_load=args.num_samples,
-        gslider_index=3,
-    )
-
-    print("Loaded volume shape:", vol.shape)
-    print("min/max:", vol.min(), "/", vol.max())
-    print("mean:", vol.mean())
-
-    # Save first DWI channel as 4D NIfTI
-    dwi_idx = 2
-    H, W, C, S, N = vol.shape
-    vol4d = vol[..., dwi_idx]            # (H,W,coils,slices)
-    vol4d = np.transpose(vol4d, (0,1,3,2))  # (H,W,slices,coils)
-    affine = np.eye(4)
-    base = os.path.splitext(os.path.basename(args.file_path))[0]
-    out_fname = f"{base}_dwi{dwi_idx}.nii"
-    nib.save(nib.Nifti1Image(vol4d, affine), out_fname)
-    print(f"Saved 4D NIfTI: {out_fname}")
