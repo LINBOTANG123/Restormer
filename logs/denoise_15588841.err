@@ -1,0 +1,185 @@
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:14655 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:14655 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:14655 (errno: 97 - Address family not supported by protocol).
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 242, in _lazy_init
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 242, in _lazy_init
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 242, in _lazy_init
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 242, in _lazy_init
+    queued_call()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 125, in _check_capability
+    queued_call()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 125, in _check_capability
+        queued_call()queued_call()
+
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 125, in _check_capability
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 125, in _check_capability
+    capability = get_device_capability(d)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 357, in get_device_capability
+    capability = get_device_capability(d)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 357, in get_device_capability
+        capability = get_device_capability(d)capability = get_device_capability(d)
+
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 357, in get_device_capability
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 357, in get_device_capability
+    prop = get_device_properties(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 375, in get_device_properties
+    prop = get_device_properties(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 375, in get_device_properties
+    prop = get_device_properties(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 375, in get_device_properties
+    prop = get_device_properties(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 375, in get_device_properties
+    return _get_device_properties(device)  # type: ignore[name-defined]
+RuntimeError: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    return _get_device_properties(device)  # type: ignore[name-defined]
+RuntimeError: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    main()
+  File "basicsr/train.py", line 140, in main
+    return _get_device_properties(device)  # type: ignore[name-defined]
+    return _get_device_properties(device)  # type: ignore[name-defined]RuntimeError
+: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+RuntimeError:   File "basicsr/train.py", line 378, in <module>
+device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    main()
+  File "basicsr/train.py", line 140, in main
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    main()
+  File "basicsr/train.py", line 140, in main
+    main()
+  File "basicsr/train.py", line 140, in main
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 41, in _init_dist_pytorch
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    torch.cuda.set_device(local_rank)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 326, in set_device
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 41, in _init_dist_pytorch
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    torch.cuda.set_device(local_rank)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 326, in set_device
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 41, in _init_dist_pytorch
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 41, in _init_dist_pytorch
+    torch.cuda.set_device(local_rank)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 326, in set_device
+    torch.cuda.set_device(local_rank)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 326, in set_device
+    torch._C._cuda_setDevice(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 246, in _lazy_init
+    torch._C._cuda_setDevice(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 246, in _lazy_init
+    torch._C._cuda_setDevice(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 246, in _lazy_init
+    torch._C._cuda_setDevice(device)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 246, in _lazy_init
+    raise DeferredCudaCallError(msg) from e
+torch.cuda.DeferredCudaCallError: CUDA call failed lazily at initialization with error: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+CUDA call was originally invoked at:
+
+['  File "basicsr/train.py", line 7, in <module>\n    import torch\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/__init__.py", line 798, in <module>\n    _C._initExtension(manager_path())\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 179, in <module>\n    _lazy_call(_check_capability)\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 177, in _lazy_call\n    _queued_calls.append((callable, traceback.format_stack()))\n']
+    raise DeferredCudaCallError(msg) from e
+torch.cuda.DeferredCudaCallError: CUDA call failed lazily at initialization with error: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+CUDA call was originally invoked at:
+
+['  File "basicsr/train.py", line 7, in <module>\n    import torch\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/__init__.py", line 798, in <module>\n    _C._initExtension(manager_path())\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 179, in <module>\n    _lazy_call(_check_capability)\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 177, in _lazy_call\n    _queued_calls.append((callable, traceback.format_stack()))\n']
+    raise DeferredCudaCallError(msg) from e
+torch.cuda.DeferredCudaCallError: CUDA call failed lazily at initialization with error: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+CUDA call was originally invoked at:
+
+['  File "basicsr/train.py", line 7, in <module>\n    import torch\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/__init__.py", line 798, in <module>\n    _C._initExtension(manager_path())\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 179, in <module>\n    _lazy_call(_check_capability)\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 177, in _lazy_call\n    _queued_calls.append((callable, traceback.format_stack()))\n']
+    raise DeferredCudaCallError(msg) from e
+torch.cuda.DeferredCudaCallError: CUDA call failed lazily at initialization with error: device >= 0 && device < num_gpus INTERNAL ASSERT FAILED at "../aten/src/ATen/cuda/CUDAContext.cpp":50, please report a bug to PyTorch. 
+
+CUDA call was originally invoked at:
+
+['  File "basicsr/train.py", line 7, in <module>\n    import torch\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/__init__.py", line 798, in <module>\n    _C._initExtension(manager_path())\n', '  File "<frozen importlib._bootstrap>", line 983, in _find_and_load\n', '  File "<frozen importlib._bootstrap>", line 967, in _find_and_load_unlocked\n', '  File "<frozen importlib._bootstrap>", line 677, in _load_unlocked\n', '  File "<frozen importlib._bootstrap_external>", line 728, in exec_module\n', '  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 179, in <module>\n    _lazy_call(_check_capability)\n', '  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/cuda/__init__.py", line 177, in _lazy_call\n    _queued_calls.append((callable, traceback.format_stack()))\n']
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 3115803) of binary: /n/home11/ltang02/miniconda3/envs/restomer/bin/python
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 346, in wrapper
+    return f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 762, in main
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 248, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+basicsr/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2025-05-15_13:26:12
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 3115804)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2025-05-15_13:26:12
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 3115805)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2025-05-15_13:26:12
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 3115806)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-05-15_13:26:12
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 3115803)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

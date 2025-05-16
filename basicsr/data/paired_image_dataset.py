@@ -212,7 +212,8 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
 
         # Multi-coil simulation parameters.
         self.num_coils = opt.get('num_coils', 32)
-        self.use_csm = True  # Only using CSM in this pipeline.
+        self.use_csm = opt.get('use_csm', True)  # Only using CSM in this pipeline.
+        print("USE CSM: ", self.use_csm)
 
         # File I/O.
         self.io_backend_opt = opt['io_backend']
@@ -261,17 +262,21 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         H, W = img_gt.shape
 
         # *** Change intensity by adding a random offset ***
-        offset_range = self.opt.get('intensity_offset_range', 0.2)  # can be adjusted as needed
+        offset_range = self.opt.get('intensity_offset_range', 0.0)  # can be adjusted as needed
         intensity_offset = random.uniform(-offset_range, offset_range)
         img_gt = np.clip(img_gt + intensity_offset, 0, 1.0)
 
         # --- Generate clean coil image for target coil using the CSM ---
         # Use a random version from the sensitivity map.
-        slice_idx = random.randint(0, self.num_versions - 1)
-        csm_slice = self.sens_gre[:, :, :, slice_idx]  # shape: (H, W, num_coils)
-        csm_slice = np.transpose(csm_slice, (2, 0, 1))    # shape: (num_coils, H, W)
-        target_coil = 0  # fixed target coil index (you can also randomize if desired)
-        clean_coil = img_gt * np.abs(csm_slice[target_coil])  # shape: (H, W)
+        if self.use_csm:
+            # pick a sensitivity‐map version
+            slice_idx = random.randint(0, self.num_versions - 1)
+            csm_slice = self.sens_gre[:, :, :, slice_idx]    # H×W×coils
+            csm_slice = np.transpose(csm_slice, (2,0,1))    # coils×H×W
+            target_coil = random.randint(0, self.num_coils - 1)
+            clean_coil   = img_gt * np.abs(csm_slice[target_coil])
+        else:
+            clean_coil = img_gt
 
         # --- Simulate noise for the target coil ---
         coil_smoothed = repeated_gaussian_smoothing(
@@ -283,18 +288,28 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         coil_smoothed = np.clip(coil_smoothed, 0, 1)
         if random.random() < self.random_invert_prob:
             coil_smoothed = 1.0 - coil_smoothed
+
+        # spatial (CSM‐dependent) std
         noise_std = random.uniform(self.noise_std_min, self.noise_std_max)
-        noise_map = coil_smoothed * noise_std
-        smoothing_noise = np.random.randn(H, W).astype(np.float32) * noise_map
-        noisy_coil = clean_coil + smoothing_noise
-        whole_noise = np.random.randn(H, W).astype(np.float32) * self.whole_noise_std
-        noisy_coil = noisy_coil + whole_noise
+        spatial_map = coil_smoothed * noise_std
+
+        # whole‐volume (global) std
+        global_std = self.whole_noise_std
+
+        # combined std map
+        noise_map = np.sqrt(spatial_map**2 + global_std**2)
+
+        # actual noise realizations
+        smoothing_noise = np.random.randn(H, W).astype(np.float32) * spatial_map
+        whole_noise     = np.random.randn(H, W).astype(np.float32) * global_std
+
+        # add them
+        noisy_coil = clean_coil + smoothing_noise + whole_noise
         noisy_coil = np.clip(noisy_coil, 0, 1)
 
         # --- Form Input and GT ---
         # Input: 2 channels (noisy coil image and its noise map)
-        lq = np.stack([noisy_coil, noise_map], axis=0)  # shape: (2, H, W)
-        # GT: the clean coil image (target)
+        lq = np.stack([noisy_coil, noise_map], axis=0)
         gt_final = clean_coil  # shape: (H, W)
 
         # --- Convert to torch tensors ---

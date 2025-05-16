@@ -1,0 +1,400 @@
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:29500 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:426] [c10d] The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+[E socket.cpp:462] [c10d] The server socket has failed to listen on any local network address.
+[W socket.cpp:426] [c10d] The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+[E socket.cpp:462] [c10d] The server socket has failed to listen on any local network address.
+[W socket.cpp:426] [c10d] The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+[E socket.cpp:462] [c10d] The server socket has failed to listen on any local network address.
+/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py:188: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 195, in <module>
+    main()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 191, in main
+    launch(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 176, in launch
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 237, in launch_agent
+    result = agent.run()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 709, in run
+    result = self._invoke_run(role)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 844, in _invoke_run
+    self._initialize_workers(self._worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 678, in _initialize_workers
+    self._rendezvous(worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 538, in _rendezvous
+    store, group_rank, group_world_size = spec.rdzv_handler.next_rendezvous()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/rendezvous/static_tcp_rendezvous.py", line 61, in next_rendezvous
+    multi_tenant=True,
+RuntimeError: The server socket has failed to listen on any local network address. The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol). The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py:188: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 195, in <module>
+    main()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 191, in main
+    launch(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 176, in launch
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 237, in launch_agent
+    result = agent.run()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 709, in run
+    result = self._invoke_run(role)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 844, in _invoke_run
+    self._initialize_workers(self._worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 678, in _initialize_workers
+    self._rendezvous(worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 538, in _rendezvous
+    store, group_rank, group_world_size = spec.rdzv_handler.next_rendezvous()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/rendezvous/static_tcp_rendezvous.py", line 61, in next_rendezvous
+    multi_tenant=True,
+RuntimeError: The server socket has failed to listen on any local network address. The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol). The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py:188: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 195, in <module>
+    main()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 191, in main
+    launch(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 176, in launch
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 237, in launch_agent
+    result = agent.run()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 709, in run
+    result = self._invoke_run(role)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 844, in _invoke_run
+    self._initialize_workers(self._worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 678, in _initialize_workers
+    self._rendezvous(worker_group)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/metrics/api.py", line 129, in wrapper
+    result = f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/agent/server/api.py", line 538, in _rendezvous
+    store, group_rank, group_world_size = spec.rdzv_handler.next_rendezvous()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/rendezvous/static_tcp_rendezvous.py", line 61, in next_rendezvous
+    multi_tenant=True,
+RuntimeError: The server socket has failed to listen on any local network address. The server socket cannot be initialized on [::]:29500 (errno: 97 - Address family not supported by protocol). The server socket has failed to listen on 0.0.0.0:29500 (errno: 98 - Address already in use).
+srun: error: holygpu7c26302: tasks 0-1,3: Exited with exit code 1
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+  File "basicsr/train.py", line 378, in <module>
+    main()
+  File "basicsr/train.py", line 170, in main
+    main()
+  File "basicsr/train.py", line 170, in main
+    main()
+  File "basicsr/train.py", line 170, in main
+    make_exp_dirs(opt)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 81, in wrapper
+    make_exp_dirs(opt)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 81, in wrapper
+    make_exp_dirs(opt)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 81, in wrapper
+    return func(*args, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 43, in make_exp_dirs
+    return func(*args, **kwargs)    
+return func(*args, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 43, in make_exp_dirs
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 43, in make_exp_dirs
+    mkdir_and_rename(path_opt.pop('experiments_root'))
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 34, in mkdir_and_rename
+    mkdir_and_rename(path_opt.pop('experiments_root'))
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 34, in mkdir_and_rename
+    os.rename(path, new_name)
+FileNotFoundError: [Errno 2] No such file or directory: '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8' -> '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8_archived_20250515_130118'
+    os.rename(path, new_name)
+FileNotFoundError: [Errno 2] No such file or directory: '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8' -> '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8_archived_20250515_130118'
+    mkdir_and_rename(path_opt.pop('experiments_root'))
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/misc.py", line 34, in mkdir_and_rename
+    os.rename(path, new_name)
+FileNotFoundError: [Errno 2] No such file or directory: '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8' -> '/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8_archived_20250515_130118'
+2025-05-15 13:01:18,679 INFO: 
+                ____                _       _____  ____
+               / __ ) ____ _ _____ (_)_____/ ___/ / __ \
+              / __  |/ __ `// ___// // ___/\__ \ / /_/ /
+             / /_/ // /_/ /(__  )/ // /__ ___/ // _, _/
+            /_____/ \__,_//____//_/ \___//____//_/ |_|
+     ______                   __   __                 __      __
+    / ____/____   ____   ____/ /  / /   __  __ _____ / /__   / /
+   / / __ / __ \ / __ \ / __  /  / /   / / / // ___// //_/  / /
+  / /_/ // /_/ // /_/ // /_/ /  / /___/ /_/ // /__ / /<    /_/
+  \____/ \____/ \____/ \____/  /_____/\____/ \___//_/|_|  (_)
+    
+Version Information: 
+	BasicSR: 1.2.0+1c931af
+	PyTorch: 1.13.1+cu117
+	TorchVision: 0.14.1+cu117
+2025-05-15 13:01:18,679 INFO: 
+  name: GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8
+  model_type: ImageCleanModel
+  scale: 1
+  num_gpu: 1
+  manual_seed: 42
+  datasets:[
+    train:[
+      name: TrainSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_type: random
+      sigma_range: [55, 75]
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/new_train_gray
+      dataroot_lq: none
+      geometric_augs: True
+      noise_std_min: 0.05
+      noise_std_max: 0.1
+      whole_noise_std: 0.03
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      use_csm: True
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      use_shuffle: True
+      num_worker_per_gpu: 4
+      batch_size_per_gpu: 8
+      mini_batch_sizes: [8, 8, 8, 8, 8, 8, 8]
+      iters: [92000, 64000, 48000, 36000, 36000, 24000, 200000, 100000]
+      gt_size: 146
+      gt_sizes: [128, 128, 128, 128, 128, 128, 128, 128]
+      dataset_enlarge_ratio: 1
+      prefetch_mode: None
+      phase: train
+      scale: 1
+    ]
+    val:[
+      name: ValSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_test: 50
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/test
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      dataroot_lq: none
+      io_backend:[
+        type: disk
+      ]
+      noise_std_min: 0.05
+      noise_std_max: 0.45
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      phase: val
+      scale: 1
+    ]
+  ]
+  network_g:[
+    type: Restormer
+    inp_channels: 2
+    out_channels: 1
+    dim: 48
+    num_blocks: [4, 6, 6, 8]
+    num_refinement_blocks: 4
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.66
+    bias: False
+    LayerNorm_type: BiasFree
+    dual_pixel_task: False
+  ]
+  path:[
+    pretrain_network_g: None
+    strict_load_g: False
+    resume_state: None
+    root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer
+    experiments_root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8
+    models: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8/models
+    training_states: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8/training_states
+    log: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8
+    visualization: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/GaussianGrayDenoising_RestormerSigma_smooth_patchsize128_batch8/visualization
+  ]
+  train:[
+    total_iter: 600000
+    warmup_iter: -1
+    use_grad_clip: True
+    scheduler:[
+      type: CosineAnnealingRestartCyclicLR
+      periods: [92000, 208000, 400000]
+      restart_weights: [1, 1, 1]
+      eta_mins: [0.0003, 0.0001, 5e-05]
+    ]
+    mixing_augs:[
+      mixup: True
+      mixup_beta: 1.2
+      use_identity: True
+    ]
+    optim_g:[
+      type: AdamW
+      lr: 0.0001
+      weight_decay: 0.0001
+      betas: [0.9, 0.999]
+    ]
+    pixel_opt:[
+      type: L1Loss
+      loss_weight: 1
+      reduction: mean
+    ]
+  ]
+  val:[
+    window_size: 8
+    val_freq: 4000.0
+    save_img: True
+    rgb2bgr: True
+    use_image: False
+    max_minibatch: 8
+    metrics:[
+      psnr:[
+        type: calculate_psnr
+        crop_border: 0
+        test_y_channel: False
+      ]
+    ]
+  ]
+  logger:[
+    print_freq: 1000
+    save_checkpoint_freq: 4000.0
+    use_tb_logger: True
+    wandb:[
+      project: None
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 29500
+  ]
+  is_train: True
+  dist: False
+  rank: 0
+  world_size: 1
+
+/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py:188: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+WARNING:torch.distributed.elastic.multiprocessing.api:Sending process 1178009 closing signal SIGTERM
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 1178008) of binary: /n/home11/ltang02/miniconda3/envs/restomer/bin/python
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 195, in <module>
+    main()
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 191, in main
+    launch(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launch.py", line 176, in launch
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 248, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+basicsr/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2025-05-15_13:01:20
+  host      : holygpu7c26302.rc.fas.harvard.edu
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 1178010)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2025-05-15_13:01:20
+  host      : holygpu7c26302.rc.fas.harvard.edu
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 1178011)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-05-15_13:01:20
+  host      : holygpu7c26302.rc.fas.harvard.edu
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1178008)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+srun: error: holygpu7c26302: task 2: Exited with exit code 1

@@ -19,10 +19,28 @@ def init_dist(launcher, backend='nccl', **kwargs):
 
 
 def _init_dist_pytorch(backend, **kwargs):
+    import warnings
+
+    if 'RANK' not in os.environ or 'LOCAL_RANK' not in os.environ:
+        raise RuntimeError(
+            "Environment variables RANK and LOCAL_RANK must be set. "
+            "Use torchrun or torch.distributed.launch with proper args."
+        )
+
     rank = int(os.environ['RANK'])
+    local_rank = int(os.environ['LOCAL_RANK'])
+
     num_gpus = torch.cuda.device_count()
-    torch.cuda.set_device(rank % num_gpus)
+    if num_gpus == 0:
+        raise RuntimeError("No CUDA devices found by torch.cuda.device_count().")
+
+    if local_rank >= num_gpus:
+        warnings.warn(f"local_rank ({local_rank}) >= num_gpus ({num_gpus}) — forcing local_rank to 0.")
+        local_rank = 0
+
+    torch.cuda.set_device(local_rank)
     dist.init_process_group(backend=backend, **kwargs)
+
 
 
 def _init_dist_slurm(backend, port=None):

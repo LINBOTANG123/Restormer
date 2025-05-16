@@ -1,0 +1,101 @@
+[W socket.cpp:426] [c10d] The server socket cannot be initialized on [::]:20474 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:20474 (errno: 97 - Address family not supported by protocol).
+[W socket.cpp:601] [c10d] The client socket cannot be initialized to connect to [localhost]:20474 (errno: 97 - Address family not supported by protocol).
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    main()
+  File "basicsr/train.py", line 140, in main
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    main()
+  File "basicsr/train.py", line 140, in main
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 35, in _init_dist_pytorch
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    raise RuntimeError("No CUDA devices found by torch.cuda.device_count().")
+RuntimeError: No CUDA devices found by torch.cuda.device_count().
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 35, in _init_dist_pytorch
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    raise RuntimeError("No CUDA devices found by torch.cuda.device_count().")
+RuntimeError: No CUDA devices found by torch.cuda.device_count().
+    main()
+  File "basicsr/train.py", line 140, in main
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+Traceback (most recent call last):
+  File "basicsr/train.py", line 378, in <module>
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 35, in _init_dist_pytorch
+    main()
+  File "basicsr/train.py", line 140, in main
+    raise RuntimeError("No CUDA devices found by torch.cuda.device_count().")
+RuntimeError: No CUDA devices found by torch.cuda.device_count().
+    opt = parse_options(is_train=True)
+  File "basicsr/train.py", line 53, in parse_options
+    init_dist(args.launcher)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 14, in init_dist
+    _init_dist_pytorch(backend, **kwargs)
+  File "/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/basicsr/utils/dist_util.py", line 35, in _init_dist_pytorch
+    raise RuntimeError("No CUDA devices found by torch.cuda.device_count().")
+RuntimeError: No CUDA devices found by torch.cuda.device_count().
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 3114578) of binary: /n/home11/ltang02/miniconda3/envs/restomer/bin/python
+Traceback (most recent call last):
+  File "/n/home11/ltang02/miniconda3/envs/restomer/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 346, in wrapper
+    return f(*args, **kwargs)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 762, in main
+    run(args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/run.py", line 756, in run
+    )(*cmd_args)
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 132, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/n/home11/ltang02/miniconda3/envs/restomer/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 248, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+basicsr/train.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2025-05-15_13:22:36
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 3114579)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2025-05-15_13:22:36
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 3114580)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2025-05-15_13:22:36
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 3114581)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-05-15_13:22:36
+  host      : holygpu7c26203.rc.fas.harvard.edu
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 3114578)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
