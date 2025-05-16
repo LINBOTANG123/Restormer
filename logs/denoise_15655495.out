@@ -1,0 +1,997 @@
+Disable distributed.
+Path already exists. Rename it to /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/finetune_no_csm_archived_20250516_000816
+Path already exists. Rename it to tb_logger/finetune_no_csm_archived_20250516_000816
+USE CSM:  False
+USE CSM:  True
+ load net keys <built-in method keys of collections.OrderedDict object at 0x146875695950>
+ load net keys <built-in method keys of collections.OrderedDict object at 0x14687d5b2050>
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.039792612195014954 0.16021300852298737
+Combined result min/max before normalization: -0.039792612195014954 0.16021300852298737
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.21754898130893707 0.6878116726875305
+Combined result min/max before normalization: 0.21754898130893707 0.6878116726875305
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.06397023797035217 0.18961882591247559
+Combined result min/max before normalization: -0.06397023797035217 0.18961882591247559
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.14856818318367004 0.8006361722946167
+Combined result min/max before normalization: 0.14856818318367004 0.8006361722946167
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.021255100145936012 0.06257004290819168
+Combined result min/max before normalization: -0.021255100145936012 0.06257004290819168
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.08321991562843323 0.4071376323699951
+Combined result min/max before normalization: 0.08321991562843323 0.4071376323699951
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.020176297053694725 0.5852967500686646
+Combined result min/max before normalization: -0.020176297053694725 0.5852967500686646
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.05315764248371124 0.46012771129608154
+Combined result min/max before normalization: 0.05315764248371124 0.46012771129608154
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.02129805088043213 0.772804856300354
+Combined result min/max before normalization: -0.02129805088043213 0.772804856300354
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.013261374086141586 0.0698242038488388
+Combined result min/max before normalization: -0.013261374086141586 0.0698242038488388
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.026399120688438416 0.6630188822746277
+Combined result min/max before normalization: -0.026399120688438416 0.6630188822746277
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.012120231986045837 0.0813262015581131
+Combined result min/max before normalization: -0.012120231986045837 0.0813262015581131
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.04098498821258545 0.188773512840271
+Combined result min/max before normalization: 0.04098498821258545 0.188773512840271
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010908352211117744 0.3734703063964844
+Combined result min/max before normalization: -0.010908352211117744 0.3734703063964844
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00931444764137268 0.5776260495185852
+Combined result min/max before normalization: -0.00931444764137268 0.5776260495185852
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.012287079356610775 0.1867227405309677
+Combined result min/max before normalization: -0.012287079356610775 0.1867227405309677
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.01915132999420166 0.17713363468647003
+Combined result min/max before normalization: 0.01915132999420166 0.17713363468647003
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009216094389557838 0.29867640137672424
+Combined result min/max before normalization: -0.009216094389557838 0.29867640137672424
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.013773764483630657 0.019146859645843506
+Combined result min/max before normalization: -0.013773764483630657 0.019146859645843506
+Combined result min/max after normalization: 0.0 0.9999996423721313
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.02157282829284668 0.4478604793548584
+Combined result min/max before normalization: -0.02157282829284668 0.4478604793548584
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03845074772834778 0.9042242765426636
+Combined result min/max before normalization: 0.03845074772834778 0.9042242765426636
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.067912757396698 0.5638494491577148
+Combined result min/max before normalization: 0.067912757396698 0.5638494491577148
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.10758736729621887 0.7844164371490479
+Combined result min/max before normalization: 0.10758736729621887 0.7844164371490479
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.012292295694351196 0.6851300001144409
+Combined result min/max before normalization: -0.012292295694351196 0.6851300001144409
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010904640890657902 0.13847891986370087
+Combined result min/max before normalization: -0.010904640890657902 0.13847891986370087
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010833640582859516 0.037923723459243774
+Combined result min/max before normalization: -0.010833640582859516 0.037923723459243774
+Combined result min/max after normalization: 0.0 0.9999997615814209
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03447924554347992 0.19163954257965088
+Combined result min/max before normalization: 0.03447924554347992 0.19163954257965088
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0025613009929656982 0.3465726375579834
+Combined result min/max before normalization: -0.0025613009929656982 0.3465726375579834
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.12148082256317139 0.5596078634262085
+Combined result min/max before normalization: 0.12148082256317139 0.5596078634262085
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.01760861650109291 0.3124285936355591
+Combined result min/max before normalization: -0.01760861650109291 0.3124285936355591
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009996559470891953 0.8898718953132629
+Combined result min/max before normalization: -0.009996559470891953 0.8898718953132629
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009910929948091507 0.051193419843912125
+Combined result min/max before normalization: -0.009910929948091507 0.051193419843912125
+Combined result min/max after normalization: 0.0 0.9999998211860657
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.018961608409881592 0.3687863349914551
+Combined result min/max before normalization: 0.018961608409881592 0.3687863349914551
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.014471273869276047 0.3439408540725708
+Combined result min/max before normalization: -0.014471273869276047 0.3439408540725708
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.011981414631009102 0.0550321526825428
+Combined result min/max before normalization: -0.011981414631009102 0.0550321526825428
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010992887429893017 0.335590660572052
+Combined result min/max before normalization: -0.010992887429893017 0.335590660572052
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.1490441858768463 0.5989824533462524
+Combined result min/max before normalization: 0.1490441858768463 0.5989824533462524
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03996194899082184 0.30083250999450684
+Combined result min/max before normalization: 0.03996194899082184 0.30083250999450684
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.013215500861406326 0.13670390844345093
+Combined result min/max before normalization: -0.013215500861406326 0.13670390844345093
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008828669786453247 0.09187531471252441
+Combined result min/max before normalization: -0.008828669786453247 0.09187531471252441
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.11744892597198486 0.5690921545028687
+Combined result min/max before normalization: 0.11744892597198486 0.5690921545028687
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010541785508394241 0.04775378853082657
+Combined result min/max before normalization: -0.010541785508394241 0.04775378853082657
+Combined result min/max after normalization: 0.0 0.9999998211860657
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010487164370715618 0.2205764353275299
+Combined result min/max before normalization: -0.010487164370715618 0.2205764353275299
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.17087385058403015 0.5353837013244629
+Combined result min/max before normalization: 0.17087385058403015 0.5353837013244629
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.1302337944507599 0.5155937075614929
+Combined result min/max before normalization: 0.1302337944507599 0.5155937075614929
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.012488218955695629 0.10129828751087189
+Combined result min/max before normalization: -0.012488218955695629 0.10129828751087189
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.014213413000106812 0.08432687819004059
+Combined result min/max before normalization: -0.014213413000106812 0.08432687819004059
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.014143258333206177 0.3808590769767761
+Combined result min/max before normalization: -0.014143258333206177 0.3808590769767761
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006769963540136814 0.5942675471305847
+Combined result min/max before normalization: -0.006769963540136814 0.5942675471305847
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010327215306460857 0.5937768220901489
+Combined result min/max before normalization: -0.010327215306460857 0.5937768220901489
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010011287406086922 0.5913441181182861
+Combined result min/max before normalization: -0.010011287406086922 0.5913441181182861
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.014893805608153343 0.5987655520439148
+Combined result min/max before normalization: -0.014893805608153343 0.5987655520439148
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.01152762770652771 0.44380906224250793
+Combined result min/max before normalization: -0.01152762770652771 0.44380906224250793
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0780697762966156 0.5188034772872925
+Combined result min/max before normalization: 0.0780697762966156 0.5188034772872925
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.007123976945877075 0.10448840260505676
+Combined result min/max before normalization: 0.007123976945877075 0.10448840260505676
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 8.292496204376221e-05 0.0829157829284668
+Combined result min/max before normalization: 8.292496204376221e-05 0.0829157829284668
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.004652678966522217 0.04532665014266968
+Combined result min/max before normalization: 0.004652678966522217 0.04532665014266968
+Combined result min/max after normalization: 0.0 0.9999997019767761
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03863605856895447 0.3418195843696594
+Combined result min/max before normalization: 0.03863605856895447 0.3418195843696594
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.004306383430957794 0.15607011318206787
+Combined result min/max before normalization: -0.004306383430957794 0.15607011318206787
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.010430902242660522 0.20285481214523315
+Combined result min/max before normalization: 0.010430902242660522 0.20285481214523315
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008747700601816177 0.0977550595998764
+Combined result min/max before normalization: -0.008747700601816177 0.0977550595998764
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.013192862272262573 0.1659841537475586
+Combined result min/max before normalization: 0.013192862272262573 0.1659841537475586
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007877128198742867 0.3399465084075928
+Combined result min/max before normalization: -0.007877128198742867 0.3399465084075928
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00800988171249628 0.35513439774513245
+Combined result min/max before normalization: -0.00800988171249628 0.35513439774513245
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009547511115670204 0.035630688071250916
+Combined result min/max before normalization: -0.009547511115670204 0.035630688071250916
+Combined result min/max after normalization: 0.0 0.9999997615814209
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00688619539141655 0.28937917947769165
+Combined result min/max before normalization: -0.00688619539141655 0.28937917947769165
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0023525655269622803 0.8040470480918884
+Combined result min/max before normalization: -0.0023525655269622803 0.8040470480918884
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009030669927597046 0.0348692387342453
+Combined result min/max before normalization: -0.009030669927597046 0.0348692387342453
+Combined result min/max after normalization: 0.0 0.9999997615814209
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.011174464598298073 0.2508586645126343
+Combined result min/max before normalization: -0.011174464598298073 0.2508586645126343
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009728294797241688 0.12611180543899536
+Combined result min/max before normalization: -0.009728294797241688 0.12611180543899536
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008525996468961239 0.5428916215896606
+Combined result min/max before normalization: -0.008525996468961239 0.5428916215896606
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00989504437893629 0.24821868538856506
+Combined result min/max before normalization: -0.00989504437893629 0.24821868538856506
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.07205080986022949 0.6042584776878357
+Combined result min/max before normalization: 0.07205080986022949 0.6042584776878357
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006826374679803848 0.472023606300354
+Combined result min/max before normalization: -0.006826374679803848 0.472023606300354
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0032766684889793396 0.30926409363746643
+Combined result min/max before normalization: -0.0032766684889793396 0.30926409363746643
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010255113244056702 0.04463573917746544
+Combined result min/max before normalization: -0.010255113244056702 0.04463573917746544
+Combined result min/max after normalization: 0.0 0.9999998211860657
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.013540178537368774 0.4606666564941406
+Combined result min/max before normalization: -0.013540178537368774 0.4606666564941406
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009927850216627121 0.7484847903251648
+Combined result min/max before normalization: -0.009927850216627121 0.7484847903251648
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009866327047348022 0.36499571800231934
+Combined result min/max before normalization: -0.009866327047348022 0.36499571800231934
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008005306124687195 0.7261567115783691
+Combined result min/max before normalization: -0.008005306124687195 0.7261567115783691
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010240340605378151 0.25760579109191895
+Combined result min/max before normalization: -0.010240340605378151 0.25760579109191895
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.032768458127975464 0.3451992869377136
+Combined result min/max before normalization: 0.032768458127975464 0.3451992869377136
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008705727756023407 0.4383895695209503
+Combined result min/max before normalization: -0.008705727756023407 0.4383895695209503
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.029156625270843506 0.3676338195800781
+Combined result min/max before normalization: 0.029156625270843506 0.3676338195800781
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007094688713550568 0.14964993298053741
+Combined result min/max before normalization: -0.007094688713550568 0.14964993298053741
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.044105470180511475 0.5094847679138184
+Combined result min/max before normalization: 0.044105470180511475 0.5094847679138184
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0005823671817779541 0.22587519884109497
+Combined result min/max before normalization: 0.0005823671817779541 0.22587519884109497
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.022016137838363647 0.7575362920761108
+Combined result min/max before normalization: 0.022016137838363647 0.7575362920761108
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.011301353573799133 0.22025245428085327
+Combined result min/max before normalization: 0.011301353573799133 0.22025245428085327
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007038109935820103 0.19295910000801086
+Combined result min/max before normalization: -0.007038109935820103 0.19295910000801086
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0212782621383667 0.3260461091995239
+Combined result min/max before normalization: 0.0212782621383667 0.3260461091995239
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008523548021912575 0.4678615629673004
+Combined result min/max before normalization: -0.008523548021912575 0.4678615629673004
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006982244551181793 0.21927206218242645
+Combined result min/max before normalization: -0.006982244551181793 0.21927206218242645
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.028546079993247986 0.8566702604293823
+Combined result min/max before normalization: -0.028546079993247986 0.8566702604293823
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.019816339015960693 0.8297313451766968
+Combined result min/max before normalization: 0.019816339015960693 0.8297313451766968
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.012173324823379517 0.24351799488067627
+Combined result min/max before normalization: 0.012173324823379517 0.24351799488067627
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006175212562084198 0.15605080127716064
+Combined result min/max before normalization: -0.006175212562084198 0.15605080127716064
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0028284788131713867 0.19308659434318542
+Combined result min/max before normalization: 0.0028284788131713867 0.19308659434318542
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00034677982330322266 0.3349866271018982
+Combined result min/max before normalization: -0.00034677982330322266 0.3349866271018982
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007481645792722702 0.19864512979984283
+Combined result min/max before normalization: -0.007481645792722702 0.19864512979984283
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.005193591117858887 0.11227995157241821
+Combined result min/max before normalization: 0.005193591117858887 0.11227995157241821
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.022255435585975647 0.9273367524147034
+Combined result min/max before normalization: 0.022255435585975647 0.9273367524147034
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.018360525369644165 0.6628091931343079
+Combined result min/max before normalization: 0.018360525369644165 0.6628091931343079
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0032592564821243286 0.14866763353347778
+Combined result min/max before normalization: -0.0032592564821243286 0.14866763353347778
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006377736106514931 0.2659754157066345
+Combined result min/max before normalization: -0.006377736106514931 0.2659754157066345
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007906176149845123 0.6232831478118896
+Combined result min/max before normalization: -0.007906176149845123 0.6232831478118896
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005082364194095135 0.08701004832983017
+Combined result min/max before normalization: -0.005082364194095135 0.08701004832983017
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03846120834350586 0.273952841758728
+Combined result min/max before normalization: 0.03846120834350586 0.273952841758728
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.002950310707092285 0.41014376282691956
+Combined result min/max before normalization: -0.002950310707092285 0.41014376282691956
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0065247537568211555 0.18932367861270905
+Combined result min/max before normalization: -0.0065247537568211555 0.18932367861270905
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010610836558043957 0.6649824976921082
+Combined result min/max before normalization: -0.010610836558043957 0.6649824976921082
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007125156931579113 0.1476559042930603
+Combined result min/max before normalization: -0.007125156931579113 0.1476559042930603
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0053453147411346436 0.2993406653404236
+Combined result min/max before normalization: 0.0053453147411346436 0.2993406653404236
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.024490326642990112 0.3130374550819397
+Combined result min/max before normalization: 0.024490326642990112 0.3130374550819397
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006603267043828964 0.0789661556482315
+Combined result min/max before normalization: -0.006603267043828964 0.0789661556482315
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0057443976402282715 0.16449880599975586
+Combined result min/max before normalization: 0.0057443976402282715 0.16449880599975586
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.006370127201080322 0.41165316104888916
+Combined result min/max before normalization: 0.006370127201080322 0.41165316104888916
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0003071427345275879 0.18538254499435425
+Combined result min/max before normalization: 0.0003071427345275879 0.18538254499435425
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007330220192670822 0.10319095849990845
+Combined result min/max before normalization: -0.007330220192670822 0.10319095849990845
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.008723437786102295 0.31613677740097046
+Combined result min/max before normalization: 0.008723437786102295 0.31613677740097046
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.018151432275772095 0.25556254386901855
+Combined result min/max before normalization: 0.018151432275772095 0.25556254386901855
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005842419341206551 0.1655103862285614
+Combined result min/max before normalization: -0.005842419341206551 0.1655103862285614
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.04152229428291321 0.3831925392150879
+Combined result min/max before normalization: 0.04152229428291321 0.3831925392150879
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03780949115753174 0.40780824422836304
+Combined result min/max before normalization: 0.03780949115753174 0.40780824422836304
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.010137645527720451 0.7067822813987732
+Combined result min/max before normalization: -0.010137645527720451 0.7067822813987732
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006356706842780113 0.1692543476819992
+Combined result min/max before normalization: -0.006356706842780113 0.1692543476819992
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005867622792720795 0.5007122159004211
+Combined result min/max before normalization: -0.005867622792720795 0.5007122159004211
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0066252462565898895 0.10539133101701736
+Combined result min/max before normalization: -0.0066252462565898895 0.10539133101701736
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008623722940683365 0.3650245666503906
+Combined result min/max before normalization: -0.008623722940683365 0.3650245666503906
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.022680073976516724 0.4536920189857483
+Combined result min/max before normalization: 0.022680073976516724 0.4536920189857483
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005855907686054707 0.3131718635559082
+Combined result min/max before normalization: -0.005855907686054707 0.3131718635559082
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.013943374156951904 0.5477808713912964
+Combined result min/max before normalization: 0.013943374156951904 0.5477808713912964
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.01493731141090393 0.6218287944793701
+Combined result min/max before normalization: 0.01493731141090393 0.6218287944793701
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.01505163311958313 0.2676476836204529
+Combined result min/max before normalization: 0.01505163311958313 0.2676476836204529
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.009878229349851608 0.5870919227600098
+Combined result min/max before normalization: -0.009878229349851608 0.5870919227600098
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.013449519872665405 0.5071996450424194
+Combined result min/max before normalization: 0.013449519872665405 0.5071996450424194
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005096673034131527 0.5085402131080627
+Combined result min/max before normalization: -0.005096673034131527 0.5085402131080627
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.01189464796334505 0.7796472311019897
+Combined result min/max before normalization: -0.01189464796334505 0.7796472311019897
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007140913978219032 0.36273518204689026
+Combined result min/max before normalization: -0.007140913978219032 0.36273518204689026
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.004832766950130463 0.1548965573310852
+Combined result min/max before normalization: -0.004832766950130463 0.1548965573310852
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00342472642660141 0.276880145072937
+Combined result min/max before normalization: -0.00342472642660141 0.276880145072937
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005983894690871239 0.6721508502960205
+Combined result min/max before normalization: -0.005983894690871239 0.6721508502960205
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005816865712404251 0.6512715220451355
+Combined result min/max before normalization: -0.005816865712404251 0.6512715220451355
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.007948637008666992 0.9113532900810242
+Combined result min/max before normalization: 0.007948637008666992 0.9113532900810242
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.04989925026893616 0.6037594079971313
+Combined result min/max before normalization: 0.04989925026893616 0.6037594079971313
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0013446584343910217 0.036047160625457764
+Combined result min/max before normalization: -0.0013446584343910217 0.036047160625457764
+Combined result min/max after normalization: 0.0 0.9999997019767761
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0006801113486289978 0.19480043649673462
+Combined result min/max before normalization: 0.0006801113486289978 0.19480043649673462
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.008211487904191017 0.045985616743564606
+Combined result min/max before normalization: -0.008211487904191017 0.045985616743564606
+Combined result min/max after normalization: 0.0 0.9999998211860657
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006474298425018787 0.09770146012306213
+Combined result min/max before normalization: -0.006474298425018787 0.09770146012306213
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.019210368394851685 0.696172833442688
+Combined result min/max before normalization: 0.019210368394851685 0.696172833442688
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005063066259026527 0.09744876623153687
+Combined result min/max before normalization: -0.005063066259026527 0.09744876623153687
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.004805418662726879 0.40442389249801636
+Combined result min/max before normalization: -0.004805418662726879 0.40442389249801636
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.00545855425298214 0.18617434799671173
+Combined result min/max before normalization: -0.00545855425298214 0.18617434799671173
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.058368980884552 0.5285598039627075
+Combined result min/max before normalization: 0.058368980884552 0.5285598039627075
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.03933480381965637 0.35911309719085693
+Combined result min/max before normalization: 0.03933480381965637 0.35911309719085693
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007590818218886852 0.5515691041946411
+Combined result min/max before normalization: -0.007590818218886852 0.5515691041946411
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.006130417808890343 0.5093544125556946
+Combined result min/max before normalization: -0.006130417808890343 0.5093544125556946
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.004177704453468323 0.38688331842422485
+Combined result min/max before normalization: -0.004177704453468323 0.38688331842422485
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.003805890679359436 0.12785547971725464
+Combined result min/max before normalization: -0.003805890679359436 0.12785547971725464
+Combined result min/max after normalization: 0.0 0.9999998807907104
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.008362650871276855 0.5029520988464355
+Combined result min/max before normalization: 0.008362650871276855 0.5029520988464355
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.005023850128054619 0.08542105555534363
+Combined result min/max before normalization: -0.005023850128054619 0.08542105555534363
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: 0.0029846876859664917 0.3149375915527344
+Combined result min/max before normalization: 0.0029846876859664917 0.3149375915527344
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.0010605603456497192 0.1950417459011078
+Combined result min/max before normalization: -0.0010605603456497192 0.1950417459011078
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007330773398280144 0.2582698166370392
+Combined result min/max before normalization: -0.007330773398280144 0.2582698166370392
+Combined result min/max after normalization: 0.0 1.0
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
+Original result_tensor shape: torch.Size([1, 1, 146, 146])
+Result tensor after removing batch dimension: torch.Size([1, 146, 146])
+Result tensor min/max: -0.007363136857748032 0.24211634695529938
+Combined result min/max before normalization: -0.007363136857748032 0.24211634695529938
+Combined result min/max after normalization: 0.0 0.9999999403953552
+Original gt_tensor shape: torch.Size([1, 1, 146, 146])
