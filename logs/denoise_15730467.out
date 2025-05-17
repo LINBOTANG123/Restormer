@@ -1,0 +1,5 @@
+Disable distributed.
+Path already exists. Rename it to /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_csm_newattn_archived_20250516_150655
+Path already exists. Rename it to tb_logger/train_scratch_csm_newattn_archived_20250516_150655
+USE CSM:  True
+USE CSM:  True

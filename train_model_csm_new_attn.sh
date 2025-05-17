@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=csm
+#SBATCH --job-name=attn
 #SBATCH --partition=gpu_test
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -19,5 +19,5 @@ mkdir -p logs
 
 # Run training
 python basicsr/train.py \
-  -opt Denoising/Options/GaussianGrayDenoising_RestormerSigma_smooth_csm.yml \
+  -opt Denoising/Options/GaussianGrayDenoising_RestormerSigma_smooth_csm_newattn.yml \
   --launcher none
