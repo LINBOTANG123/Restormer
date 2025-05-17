@@ -1,0 +1,1177 @@
+2025-05-17 00:38:36,538 INFO: 
+                ____                _       _____  ____
+               / __ ) ____ _ _____ (_)_____/ ___/ / __ \
+              / __  |/ __ `// ___// // ___/\__ \ / /_/ /
+             / /_/ // /_/ /(__  )/ // /__ ___/ // _, _/
+            /_____/ \__,_//____//_/ \___//____//_/ |_|
+     ______                   __   __                 __      __
+    / ____/____   ____   ____/ /  / /   __  __ _____ / /__   / /
+   / / __ / __ \ / __ \ / __  /  / /   / / / // ___// //_/  / /
+  / /_/ // /_/ // /_/ // /_/ /  / /___/ /_/ // /__ / /<    /_/
+  \____/ \____/ \____/ \____/  /_____/\____/ \___//_/|_|  (_)
+    
+Version Information: 
+	BasicSR: 1.2.0+1c931af
+	PyTorch: 1.13.1+cu117
+	TorchVision: 0.14.1+cu117
+2025-05-17 00:38:36,538 INFO: 
+  name: train_scratch_no_csm
+  model_type: ImageCleanModel
+  scale: 1
+  num_gpu: 1
+  manual_seed: 42
+  datasets:[
+    train:[
+      name: TrainSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_type: random
+      sigma_range: [55, 75]
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/new_train_gray
+      dataroot_lq: none
+      geometric_augs: True
+      noise_std_min: 0.05
+      noise_std_max: 0.1
+      whole_noise_std: 0.03
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      use_csm: False
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      use_shuffle: True
+      num_worker_per_gpu: 4
+      batch_size_per_gpu: 4
+      mini_batch_sizes: [4, 4, 4, 4, 4, 4, 4]
+      iters: [92000, 64000, 48000, 36000, 36000, 24000, 200000, 100000]
+      gt_size: 146
+      gt_sizes: [64, 64, 64, 128, 128, 128, 64, 128]
+      dataset_enlarge_ratio: 1
+      prefetch_mode: None
+      phase: train
+      scale: 1
+    ]
+    val:[
+      name: ValSet
+      type: Dataset_OnlineGaussianDenoising
+      sigma_test: 50
+      in_ch: 1
+      dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/test
+      coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+      dataroot_lq: none
+      io_backend:[
+        type: disk
+      ]
+      noise_std_min: 0.05
+      noise_std_max: 0.45
+      smooth_times: 300
+      smooth_ksize: 3
+      smooth_sigma: 7.0
+      random_invert_prob: 0.5
+      random_add_to_smoothed_prob: 0.5
+      phase: val
+      scale: 1
+    ]
+  ]
+  network_g:[
+    type: Restormer
+    inp_channels: 2
+    out_channels: 1
+    dim: 48
+    num_blocks: [4, 6, 6, 8]
+    num_refinement_blocks: 4
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.66
+    bias: False
+    LayerNorm_type: BiasFree
+    dual_pixel_task: False
+  ]
+  path:[
+    pretrain_network_g: None
+    strict_load_g: False
+    resume_state: experiments/train_scratch_no_csm/training_states/208000.state
+    root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer
+    experiments_root: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm
+    models: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/models
+    training_states: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/training_states
+    log: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm
+    visualization: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/visualization
+  ]
+  train:[
+    total_iter: 600000
+    warmup_iter: -1
+    use_grad_clip: True
+    scheduler:[
+      type: CosineAnnealingRestartCyclicLR
+      periods: [92000, 208000, 400000]
+      restart_weights: [1, 1, 1]
+      eta_mins: [0.0003, 0.0001, 5e-05]
+    ]
+    mixing_augs:[
+      mixup: True
+      mixup_beta: 1.2
+      use_identity: True
+    ]
+    optim_g:[
+      type: AdamW
+      lr: 0.0001
+      weight_decay: 0.0001
+      betas: [0.9, 0.999]
+    ]
+    pixel_opt:[
+      type: L1Loss
+      loss_weight: 1
+      reduction: mean
+    ]
+  ]
+  val:[
+    window_size: 8
+    val_freq: 4000.0
+    save_img: True
+    rgb2bgr: True
+    use_image: False
+    max_minibatch: 8
+    metrics:[
+      psnr:[
+        type: calculate_psnr
+        crop_border: 0
+        test_y_channel: False
+      ]
+    ]
+  ]
+  logger:[
+    print_freq: 1000
+    save_checkpoint_freq: 4000.0
+    use_tb_logger: True
+    wandb:[
+      project: None
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 29500
+  ]
+  is_train: True
+  dist: False
+  rank: 0
+  world_size: 1
+
+2025-05-17 00:38:41,925 INFO: Dataset Dataset_OnlineGaussianDenoising - TrainSet is created.
+2025-05-17 00:38:41,926 INFO: Training statistics:
+	Number of train images: 11000
+	Dataset enlarge ratio: 1
+	Batch size per gpu: 4
+	World size (gpu number): 1
+	Require iter number per epoch: 2750
+	Total epochs: 219; iters: 600000.
+2025-05-17 00:38:44,029 INFO: Dataset Dataset_OnlineGaussianDenoising - ValSet is created.
+2025-05-17 00:38:44,029 INFO: Number of val images/folders in ValSet: 3
+2025-05-17 00:38:44,030 INFO: Set pretrain_network_g to /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/models/net_g_208000.pth
+2025-05-17 00:38:44,242 INFO: Network: Restormer, with parameters: 26,109,508
+2025-05-17 00:38:44,242 INFO: Restormer(
+  (patch_embed): OverlapPatchEmbed(
+    (proj): Conv2d(2, 48, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+  )
+  (encoder_level1): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(48, 144, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(144, 144, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=144, bias=False)
+        (project_out): Conv2d(48, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(48, 254, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(254, 254, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=254, bias=False)
+        (project_out): Conv2d(127, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down1_2): Downsample(
+    (body): Sequential(
+      (0): Conv2d(48, 24, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (encoder_level2): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down2_3): Downsample(
+    (body): Sequential(
+      (0): Conv2d(96, 48, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (encoder_level3): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (down3_4): Downsample(
+    (body): Sequential(
+      (0): Conv2d(192, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelUnshuffle(downscale_factor=2)
+    )
+  )
+  (latent): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (6): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (7): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(1152, 1152, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1152, bias=False)
+        (project_out): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(384, 2042, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(2042, 2042, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2042, bias=False)
+        (project_out): Conv2d(1021, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up4_3): Upsample(
+    (body): Sequential(
+      (0): Conv2d(384, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (reduce_chan_level3): Conv2d(384, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (decoder_level3): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(576, 576, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=576, bias=False)
+        (project_out): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(192, 1020, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(1020, 1020, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1020, bias=False)
+        (project_out): Conv2d(510, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up3_2): Upsample(
+    (body): Sequential(
+      (0): Conv2d(192, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (reduce_chan_level2): Conv2d(192, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (decoder_level2): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (4): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (5): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (up2_1): Upsample(
+    (body): Sequential(
+      (0): Conv2d(96, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+      (1): PixelShuffle(upscale_factor=2)
+    )
+  )
+  (decoder_level1): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (refinement): Sequential(
+    (0): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (1): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (2): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+    (3): TransformerBlock(
+      (norm1): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (attn): Attention(
+        (qkv): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (qkv_dwconv): Conv2d(288, 288, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=288, bias=False)
+        (project_out): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+      (norm2): LayerNorm(
+        (body): BiasFree_LayerNorm()
+      )
+      (ffn): FeedForward(
+        (project_in): Conv2d(96, 510, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (dwconv): Conv2d(510, 510, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=510, bias=False)
+        (project_out): Conv2d(255, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      )
+    )
+  )
+  (output): Conv2d(96, 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+)
+2025-05-17 00:38:44,242 INFO: Loading Restormer model from /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/models/net_g_208000.pth.
+2025-05-17 00:38:44,382 INFO: Model [ImageCleanModel] is created.
+2025-05-17 00:38:44,382 INFO: Loading Restormer model from /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_no_csm/models/net_g_208000.pth.
+2025-05-17 00:38:44,507 INFO: Loaded pretrained weights for finetuning...
+2025-05-17 00:38:44,556 INFO: Resuming training from epoch: 75, iter: 208000.
+2025-05-17 00:38:44,857 INFO: Start training from epoch: 75, iter: 208000
+2025-05-17 00:38:45,513 INFO: 
+ Updating Patch_Size to 128 and Batch_Size to 0 
+
+2025-05-17 00:46:18,865 INFO: [train..][epoch: 75, iter: 209,000, lr:(1.000e-04,)] [eta: 2 days, 1:17:36, time (data): 0.450 (0.001)] l_pix: 1.9697e-02 
+2025-05-17 00:53:49,014 INFO: [train..][epoch: 75, iter: 210,000, lr:(1.000e-04,)] [eta: 2 days, 0:58:00, time (data): 0.450 (0.001)] l_pix: 2.1185e-02 
+2025-05-17 01:01:19,650 INFO: [train..][epoch: 76, iter: 211,000, lr:(1.000e-04,)] [eta: 2 days, 0:47:31, time (data): 0.450 (0.001)] l_pix: 1.1457e-02 
+2025-05-17 01:08:49,443 INFO: [train..][epoch: 76, iter: 212,000, lr:(1.000e-04,)] [eta: 2 days, 0:37:09, time (data): 0.450 (0.001)] l_pix: 1.6936e-02 
+2025-05-17 01:08:49,444 INFO: Saving models and training states.
+2025-05-17 01:08:53,227 INFO: Validation ValSet,		 # psnr: 37.6796
+2025-05-17 01:16:23,349 INFO: [train..][epoch: 76, iter: 213,000, lr:(1.000e-04,)] [eta: 2 days, 0:33:15, time (data): 0.450 (0.001)] l_pix: 1.9223e-02 
+2025-05-17 01:23:53,694 INFO: [train..][epoch: 77, iter: 214,000, lr:(1.000e-04,)] [eta: 2 days, 0:24:18, time (data): 0.450 (0.001)] l_pix: 1.2872e-02 
+2025-05-17 01:31:23,667 INFO: [train..][epoch: 77, iter: 215,000, lr:(1.000e-04,)] [eta: 2 days, 0:15:25, time (data): 0.450 (0.001)] l_pix: 9.9388e-03 
+2025-05-17 01:38:53,621 INFO: [train..][epoch: 77, iter: 216,000, lr:(1.000e-04,)] [eta: 2 days, 0:06:52, time (data): 0.450 (0.001)] l_pix: 1.1908e-02 
+2025-05-17 01:38:53,622 INFO: Saving models and training states.
+2025-05-17 01:38:54,465 INFO: Validation ValSet,		 # psnr: 33.3668
+2025-05-17 01:46:25,205 INFO: [train..][epoch: 78, iter: 217,000, lr:(1.000e-04,)] [eta: 1 day, 23:59:43, time (data): 0.450 (0.001)] l_pix: 1.6291e-02 
+2025-05-17 01:53:55,326 INFO: [train..][epoch: 78, iter: 218,000, lr:(1.000e-04,)] [eta: 1 day, 23:51:33, time (data): 0.450 (0.001)] l_pix: 1.6686e-02 
+2025-05-17 02:01:25,328 INFO: [train..][epoch: 78, iter: 219,000, lr:(1.000e-04,)] [eta: 1 day, 23:43:27, time (data): 0.450 (0.001)] l_pix: 2.0154e-02 
+2025-05-17 02:08:55,753 INFO: [train..][epoch: 79, iter: 220,000, lr:(1.000e-04,)] [eta: 1 day, 23:35:39, time (data): 0.450 (0.001)] l_pix: 1.1997e-02 
+2025-05-17 02:08:55,754 INFO: Saving models and training states.
+2025-05-17 02:08:56,576 INFO: Validation ValSet,		 # psnr: 33.9153
+2025-05-17 02:16:26,529 INFO: [train..][epoch: 79, iter: 221,000, lr:(1.000e-04,)] [eta: 1 day, 23:28:05, time (data): 0.450 (0.001)] l_pix: 1.9521e-02 
+2025-05-17 02:23:56,881 INFO: [train..][epoch: 80, iter: 222,000, lr:(1.000e-04,)] [eta: 1 day, 23:20:20, time (data): 0.450 (0.001)] l_pix: 1.2212e-02 
+2025-05-17 02:31:26,790 INFO: [train..][epoch: 80, iter: 223,000, lr:(1.000e-04,)] [eta: 1 day, 23:12:25, time (data): 0.450 (0.001)] l_pix: 1.5100e-02 
+2025-05-17 02:38:56,749 INFO: [train..][epoch: 80, iter: 224,000, lr:(1.000e-04,)] [eta: 1 day, 23:04:35, time (data): 0.450 (0.001)] l_pix: 1.7507e-02 
+2025-05-17 02:38:56,750 INFO: Saving models and training states.
+2025-05-17 02:38:57,618 INFO: Validation ValSet,		 # psnr: 44.8053
+2025-05-17 02:46:28,128 INFO: [train..][epoch: 81, iter: 225,000, lr:(1.000e-04,)] [eta: 1 day, 22:57:18, time (data): 0.449 (0.001)] l_pix: 1.8920e-02 
+2025-05-17 02:53:57,930 INFO: [train..][epoch: 81, iter: 226,000, lr:(1.000e-04,)] [eta: 1 day, 22:49:28, time (data): 0.450 (0.001)] l_pix: 1.3806e-02 
+2025-05-17 03:01:27,838 INFO: [train..][epoch: 81, iter: 227,000, lr:(1.000e-04,)] [eta: 1 day, 22:41:41, time (data): 0.450 (0.001)] l_pix: 1.3490e-02 
+2025-05-17 03:08:58,289 INFO: [train..][epoch: 82, iter: 228,000, lr:(1.000e-04,)] [eta: 1 day, 22:34:06, time (data): 0.450 (0.001)] l_pix: 1.4966e-02 
+2025-05-17 03:08:58,290 INFO: Saving models and training states.
+2025-05-17 03:08:59,149 INFO: Validation ValSet,		 # psnr: 37.4471
+2025-05-17 03:16:28,979 INFO: [train..][epoch: 82, iter: 229,000, lr:(1.000e-04,)] [eta: 1 day, 22:26:36, time (data): 0.450 (0.001)] l_pix: 1.8679e-02 
+2025-05-17 03:23:58,702 INFO: [train..][epoch: 82, iter: 230,000, lr:(1.000e-04,)] [eta: 1 day, 22:18:49, time (data): 0.450 (0.001)] l_pix: 1.9863e-02 
+2025-05-17 03:31:29,138 INFO: [train..][epoch: 83, iter: 231,000, lr:(1.000e-04,)] [eta: 1 day, 22:11:16, time (data): 0.450 (0.001)] l_pix: 1.4847e-02 
+2025-05-17 03:38:58,871 INFO: [train..][epoch: 83, iter: 232,000, lr:(1.000e-04,)] [eta: 1 day, 22:03:32, time (data): 0.450 (0.001)] l_pix: 1.4548e-02 
+2025-05-17 03:38:58,872 INFO: Saving models and training states.
+2025-05-17 03:38:59,762 INFO: Validation ValSet,		 # psnr: 44.6416
+2025-05-17 03:46:30,168 INFO: [train..][epoch: 84, iter: 233,000, lr:(1.000e-04,)] [eta: 1 day, 21:56:12, time (data): 0.450 (0.001)] l_pix: 1.5472e-02 
+2025-05-17 03:53:59,984 INFO: [train..][epoch: 84, iter: 234,000, lr:(1.000e-04,)] [eta: 1 day, 21:48:30, time (data): 0.450 (0.001)] l_pix: 2.2317e-02 
+2025-05-17 04:01:29,846 INFO: [train..][epoch: 84, iter: 235,000, lr:(1.000e-04,)] [eta: 1 day, 21:40:50, time (data): 0.450 (0.001)] l_pix: 1.3759e-02 
+2025-05-17 04:09:00,209 INFO: [train..][epoch: 85, iter: 236,000, lr:(1.000e-04,)] [eta: 1 day, 21:33:17, time (data): 0.450 (0.001)] l_pix: 2.1980e-02 
+2025-05-17 04:09:00,210 INFO: Saving models and training states.
+2025-05-17 04:09:01,017 INFO: Validation ValSet,		 # psnr: 39.3635
+2025-05-17 04:16:30,762 INFO: [train..][epoch: 85, iter: 237,000, lr:(1.000e-04,)] [eta: 1 day, 21:25:46, time (data): 0.450 (0.001)] l_pix: 1.7553e-02 
+2025-05-17 04:24:00,472 INFO: [train..][epoch: 85, iter: 238,000, lr:(1.000e-04,)] [eta: 1 day, 21:18:06, time (data): 0.450 (0.001)] l_pix: 1.5911e-02 
+2025-05-17 04:31:30,965 INFO: [train..][epoch: 86, iter: 239,000, lr:(1.000e-04,)] [eta: 1 day, 21:10:35, time (data): 0.450 (0.001)] l_pix: 1.2396e-02 
+2025-05-17 04:39:00,814 INFO: [train..][epoch: 86, iter: 240,000, lr:(1.000e-04,)] [eta: 1 day, 21:02:57, time (data): 0.450 (0.001)] l_pix: 1.0816e-02 
+2025-05-17 04:39:00,815 INFO: Saving models and training states.
+2025-05-17 04:39:01,688 INFO: Validation ValSet,		 # psnr: 26.4513
+2025-05-17 04:39:01,690 INFO: 
+ Updating Patch_Size to 128 and Batch_Size to 0 
+
+2025-05-17 04:46:31,445 INFO: [train..][epoch: 86, iter: 241,000, lr:(1.000e-04,)] [eta: 1 day, 20:55:28, time (data): 0.449 (0.001)] l_pix: 7.6882e-03 
+2025-05-17 04:54:01,767 INFO: [train..][epoch: 87, iter: 242,000, lr:(1.000e-04,)] [eta: 1 day, 20:47:56, time (data): 0.450 (0.001)] l_pix: 7.2343e-03 
+2025-05-17 05:01:31,600 INFO: [train..][epoch: 87, iter: 243,000, lr:(1.000e-04,)] [eta: 1 day, 20:40:18, time (data): 0.450 (0.001)] l_pix: 1.6060e-02 
+2025-05-17 05:09:01,943 INFO: [train..][epoch: 88, iter: 244,000, lr:(1.000e-04,)] [eta: 1 day, 20:32:47, time (data): 0.450 (0.001)] l_pix: 1.4128e-02 
+2025-05-17 05:09:01,944 INFO: Saving models and training states.
+2025-05-17 05:09:02,740 INFO: Validation ValSet,		 # psnr: 42.9796
+2025-05-17 05:16:32,468 INFO: [train..][epoch: 88, iter: 245,000, lr:(1.000e-04,)] [eta: 1 day, 20:25:17, time (data): 0.449 (0.001)] l_pix: 1.5737e-02 
+2025-05-17 05:24:02,195 INFO: [train..][epoch: 88, iter: 246,000, lr:(1.000e-04,)] [eta: 1 day, 20:17:39, time (data): 0.449 (0.001)] l_pix: 1.5462e-02 
+2025-05-17 05:31:32,536 INFO: [train..][epoch: 89, iter: 247,000, lr:(1.000e-04,)] [eta: 1 day, 20:10:08, time (data): 0.450 (0.001)] l_pix: 1.5467e-02 
+2025-05-17 05:39:02,309 INFO: [train..][epoch: 89, iter: 248,000, lr:(1.000e-04,)] [eta: 1 day, 20:02:31, time (data): 0.450 (0.001)] l_pix: 6.8443e-03 
+2025-05-17 05:39:02,309 INFO: Saving models and training states.
+2025-05-17 05:39:03,114 INFO: Validation ValSet,		 # psnr: 34.5029
+2025-05-17 05:46:32,990 INFO: [train..][epoch: 89, iter: 249,000, lr:(1.000e-04,)] [eta: 1 day, 19:55:03, time (data): 0.450 (0.001)] l_pix: 1.6545e-02 
+2025-05-17 05:54:03,318 INFO: [train..][epoch: 90, iter: 250,000, lr:(1.000e-04,)] [eta: 1 day, 19:47:32, time (data): 0.450 (0.001)] l_pix: 1.3227e-02 
+2025-05-17 06:01:33,099 INFO: [train..][epoch: 90, iter: 251,000, lr:(1.000e-04,)] [eta: 1 day, 19:39:56, time (data): 0.450 (0.001)] l_pix: 1.5074e-02 
+2025-05-17 06:09:02,873 INFO: [train..][epoch: 90, iter: 252,000, lr:(1.000e-04,)] [eta: 1 day, 19:32:20, time (data): 0.449 (0.001)] l_pix: 9.6100e-03 
+2025-05-17 06:09:02,873 INFO: Saving models and training states.
+2025-05-17 06:09:03,692 INFO: Validation ValSet,		 # psnr: 39.2297
+2025-05-17 06:16:33,952 INFO: [train..][epoch: 91, iter: 253,000, lr:(1.000e-04,)] [eta: 1 day, 19:24:55, time (data): 0.450 (0.001)] l_pix: 1.6703e-02 
+2025-05-17 06:24:03,714 INFO: [train..][epoch: 91, iter: 254,000, lr:(1.000e-04,)] [eta: 1 day, 19:17:20, time (data): 0.450 (0.001)] l_pix: 1.9080e-02 
+2025-05-17 06:31:34,131 INFO: [train..][epoch: 92, iter: 255,000, lr:(1.000e-04,)] [eta: 1 day, 19:09:49, time (data): 0.450 (0.001)] l_pix: 1.5827e-02 
+2025-05-17 06:39:03,972 INFO: [train..][epoch: 92, iter: 256,000, lr:(1.000e-04,)] [eta: 1 day, 19:02:15, time (data): 0.450 (0.001)] l_pix: 1.1505e-02 
+2025-05-17 06:39:03,973 INFO: Saving models and training states.
+2025-05-17 06:39:04,883 INFO: Validation ValSet,		 # psnr: 45.3494
+2025-05-17 06:46:34,762 INFO: [train..][epoch: 92, iter: 257,000, lr:(1.000e-04,)] [eta: 1 day, 18:54:47, time (data): 0.450 (0.001)] l_pix: 1.1474e-02 
+2025-05-17 06:54:05,058 INFO: [train..][epoch: 93, iter: 258,000, lr:(1.000e-04,)] [eta: 1 day, 18:47:16, time (data): 0.450 (0.001)] l_pix: 2.1344e-02 
+2025-05-17 07:01:34,942 INFO: [train..][epoch: 93, iter: 259,000, lr:(1.000e-04,)] [eta: 1 day, 18:39:42, time (data): 0.450 (0.001)] l_pix: 1.5741e-02 
+2025-05-17 07:09:04,740 INFO: [train..][epoch: 93, iter: 260,000, lr:(1.000e-04,)] [eta: 1 day, 18:32:08, time (data): 0.450 (0.001)] l_pix: 1.4471e-02 
+2025-05-17 07:09:04,741 INFO: Saving models and training states.
+2025-05-17 07:09:05,539 INFO: Validation ValSet,		 # psnr: 31.2273
+2025-05-17 07:16:35,932 INFO: [train..][epoch: 94, iter: 261,000, lr:(1.000e-04,)] [eta: 1 day, 18:24:43, time (data): 0.450 (0.001)] l_pix: 1.5517e-02 
+2025-05-17 07:24:05,741 INFO: [train..][epoch: 94, iter: 262,000, lr:(1.000e-04,)] [eta: 1 day, 18:17:09, time (data): 0.450 (0.001)] l_pix: 1.5010e-02 
+2025-05-17 07:31:35,540 INFO: [train..][epoch: 94, iter: 263,000, lr:(1.000e-04,)] [eta: 1 day, 18:09:35, time (data): 0.450 (0.001)] l_pix: 2.0636e-02 
+2025-05-17 07:39:05,926 INFO: [train..][epoch: 95, iter: 264,000, lr:(1.000e-04,)] [eta: 1 day, 18:02:05, time (data): 0.450 (0.001)] l_pix: 1.0508e-02 
+2025-05-17 07:39:05,927 INFO: Saving models and training states.
+2025-05-17 07:39:06,749 INFO: Validation ValSet,		 # psnr: 38.6151
+2025-05-17 07:46:36,611 INFO: [train..][epoch: 95, iter: 265,000, lr:(1.000e-04,)] [eta: 1 day, 17:54:36, time (data): 0.450 (0.001)] l_pix: 8.5467e-03 
+2025-05-17 07:54:06,922 INFO: [train..][epoch: 96, iter: 266,000, lr:(1.000e-04,)] [eta: 1 day, 17:47:05, time (data): 0.450 (0.001)] l_pix: 1.5616e-02 
+2025-05-17 08:01:36,739 INFO: [train..][epoch: 96, iter: 267,000, lr:(1.000e-04,)] [eta: 1 day, 17:39:32, time (data): 0.450 (0.001)] l_pix: 1.8619e-02 
+2025-05-17 08:09:06,526 INFO: [train..][epoch: 96, iter: 268,000, lr:(1.000e-04,)] [eta: 1 day, 17:31:58, time (data): 0.450 (0.001)] l_pix: 4.3497e-03 
+2025-05-17 08:09:06,526 INFO: Saving models and training states.
+2025-05-17 08:09:07,315 INFO: Validation ValSet,		 # psnr: 28.4386
+2025-05-17 08:16:37,712 INFO: [train..][epoch: 97, iter: 269,000, lr:(1.000e-04,)] [eta: 1 day, 17:24:32, time (data): 0.450 (0.001)] l_pix: 1.5061e-02 
+2025-05-17 08:24:07,481 INFO: [train..][epoch: 97, iter: 270,000, lr:(1.000e-04,)] [eta: 1 day, 17:16:59, time (data): 0.450 (0.001)] l_pix: 1.2289e-02 
+2025-05-17 08:31:37,324 INFO: [train..][epoch: 97, iter: 271,000, lr:(1.000e-04,)] [eta: 1 day, 17:09:26, time (data): 0.450 (0.001)] l_pix: 1.1915e-02 
+2025-05-17 08:39:07,747 INFO: [train..][epoch: 98, iter: 272,000, lr:(1.000e-04,)] [eta: 1 day, 17:01:56, time (data): 0.450 (0.001)] l_pix: 1.6727e-02 
+2025-05-17 08:39:07,748 INFO: Saving models and training states.
+2025-05-17 08:39:08,540 INFO: Validation ValSet,		 # psnr: 46.4216
+2025-05-17 08:46:38,462 INFO: [train..][epoch: 98, iter: 273,000, lr:(1.000e-04,)] [eta: 1 day, 16:54:27, time (data): 0.449 (0.001)] l_pix: 1.5730e-02 
+2025-05-17 08:54:08,208 INFO: [train..][epoch: 98, iter: 274,000, lr:(1.000e-04,)] [eta: 1 day, 16:46:54, time (data): 0.449 (0.001)] l_pix: 1.4667e-02 
+2025-05-17 09:01:38,580 INFO: [train..][epoch: 99, iter: 275,000, lr:(1.000e-04,)] [eta: 1 day, 16:39:23, time (data): 0.450 (0.001)] l_pix: 6.7875e-03 
+2025-05-17 09:09:08,487 INFO: [train..][epoch: 99, iter: 276,000, lr:(1.000e-04,)] [eta: 1 day, 16:31:51, time (data): 0.450 (0.001)] l_pix: 1.2002e-02 
+2025-05-17 09:09:08,488 INFO: Saving models and training states.
+2025-05-17 09:09:09,409 INFO: Validation ValSet,		 # psnr: 39.1157
+2025-05-17 09:09:09,410 INFO: 
+ Updating Patch_Size to 128 and Batch_Size to 0 
+
+2025-05-17 09:16:39,859 INFO: [train..][epoch:100, iter: 277,000, lr:(1.000e-04,)] [eta: 1 day, 16:24:25, time (data): 0.450 (0.001)] l_pix: 1.1536e-02 
+2025-05-17 09:24:09,691 INFO: [train..][epoch:100, iter: 278,000, lr:(1.000e-04,)] [eta: 1 day, 16:16:53, time (data): 0.450 (0.001)] l_pix: 1.5317e-02 
+2025-05-17 09:31:39,619 INFO: [train..][epoch:100, iter: 279,000, lr:(1.000e-04,)] [eta: 1 day, 16:09:20, time (data): 0.450 (0.001)] l_pix: 1.7971e-02 
+2025-05-17 09:39:09,895 INFO: [train..][epoch:101, iter: 280,000, lr:(1.000e-04,)] [eta: 1 day, 16:01:50, time (data): 0.450 (0.001)] l_pix: 8.9853e-03 
+2025-05-17 09:39:09,895 INFO: Saving models and training states.
+2025-05-17 09:39:10,761 INFO: Validation ValSet,		 # psnr: 36.0924
+2025-05-17 09:46:41,182 INFO: [train..][epoch:101, iter: 281,000, lr:(1.000e-04,)] [eta: 1 day, 15:54:23, time (data): 0.450 (0.001)] l_pix: 1.4793e-02 
+2025-05-17 09:54:11,895 INFO: [train..][epoch:101, iter: 282,000, lr:(1.000e-04,)] [eta: 1 day, 15:46:55, time (data): 0.451 (0.001)] l_pix: 1.3227e-02 
+2025-05-17 10:01:43,340 INFO: [train..][epoch:102, iter: 283,000, lr:(1.000e-04,)] [eta: 1 day, 15:39:29, time (data): 0.451 (0.001)] l_pix: 2.3328e-02 
+2025-05-17 10:09:14,200 INFO: [train..][epoch:102, iter: 284,000, lr:(1.000e-04,)] [eta: 1 day, 15:32:00, time (data): 0.451 (0.001)] l_pix: 3.4052e-03 
+2025-05-17 10:09:14,201 INFO: Saving models and training states.
+2025-05-17 10:09:15,062 INFO: Validation ValSet,		 # psnr: 42.3188
+2025-05-17 10:16:46,102 INFO: [train..][epoch:102, iter: 285,000, lr:(1.000e-04,)] [eta: 1 day, 15:24:36, time (data): 0.451 (0.001)] l_pix: 1.5260e-02 
+2025-05-17 10:24:17,484 INFO: [train..][epoch:103, iter: 286,000, lr:(1.000e-04,)] [eta: 1 day, 15:17:10, time (data): 0.451 (0.001)] l_pix: 1.9260e-02 
+2025-05-17 10:31:48,423 INFO: [train..][epoch:103, iter: 287,000, lr:(1.000e-04,)] [eta: 1 day, 15:09:41, time (data): 0.451 (0.001)] l_pix: 1.0660e-02 
+2025-05-17 10:39:19,894 INFO: [train..][epoch:104, iter: 288,000, lr:(1.000e-04,)] [eta: 1 day, 15:02:15, time (data): 0.451 (0.001)] l_pix: 1.7021e-02 
+2025-05-17 10:39:19,895 INFO: Saving models and training states.
+2025-05-17 10:39:20,771 INFO: Validation ValSet,		 # psnr: 32.9997
+2025-05-17 10:46:51,694 INFO: [train..][epoch:104, iter: 289,000, lr:(1.000e-04,)] [eta: 1 day, 14:54:50, time (data): 0.451 (0.001)] l_pix: 1.5634e-02 
+2025-05-17 10:54:22,598 INFO: [train..][epoch:104, iter: 290,000, lr:(1.000e-04,)] [eta: 1 day, 14:47:21, time (data): 0.451 (0.001)] l_pix: 7.1876e-03 
+2025-05-17 11:01:54,232 INFO: [train..][epoch:105, iter: 291,000, lr:(1.000e-04,)] [eta: 1 day, 14:39:55, time (data): 0.451 (0.001)] l_pix: 2.1264e-02 
+2025-05-17 11:09:25,089 INFO: [train..][epoch:105, iter: 292,000, lr:(1.000e-04,)] [eta: 1 day, 14:32:26, time (data): 0.451 (0.001)] l_pix: 1.6628e-02 
+2025-05-17 11:09:25,090 INFO: Saving models and training states.
+2025-05-17 11:09:25,926 INFO: Validation ValSet,		 # psnr: 41.5512
+2025-05-17 11:16:56,867 INFO: [train..][epoch:105, iter: 293,000, lr:(1.000e-04,)] [eta: 1 day, 14:25:00, time (data): 0.451 (0.001)] l_pix: 1.8323e-02 
+2025-05-17 11:24:28,289 INFO: [train..][epoch:106, iter: 294,000, lr:(1.000e-04,)] [eta: 1 day, 14:17:33, time (data): 0.451 (0.001)] l_pix: 1.1701e-02 
+2025-05-17 11:31:59,193 INFO: [train..][epoch:106, iter: 295,000, lr:(1.000e-04,)] [eta: 1 day, 14:10:04, time (data): 0.451 (0.001)] l_pix: 1.0601e-02 
+2025-05-17 11:39:30,095 INFO: [train..][epoch:106, iter: 296,000, lr:(1.000e-04,)] [eta: 1 day, 14:02:35, time (data): 0.451 (0.001)] l_pix: 1.5698e-02 
+2025-05-17 11:39:30,096 INFO: Saving models and training states.
+2025-05-17 11:39:31,124 INFO: Validation ValSet,		 # psnr: 46.2852
+2025-05-17 11:47:02,620 INFO: [train..][epoch:107, iter: 297,000, lr:(1.000e-04,)] [eta: 1 day, 13:55:11, time (data): 0.451 (0.001)] l_pix: 1.6456e-02 
+2025-05-17 11:54:33,518 INFO: [train..][epoch:107, iter: 298,000, lr:(1.000e-04,)] [eta: 1 day, 13:47:42, time (data): 0.451 (0.001)] l_pix: 1.4373e-02 
