@@ -6,6 +6,9 @@ import numpy as np
 import nibabel as nib
 import torch
 import torch.nn.functional as F
+import skimage.exposure as ex
+import matplotlib.pyplot as plt
+from scipy.stats import kurtosis
 
 from utils.mat_loader    import load_mri_data
 from utils.noise_loader import load_noise_data, replicate_noise_map_with_sampling
@@ -47,7 +50,7 @@ def main():
     p.add_argument('--mri_key',     default='image',
                    help='Dataset key inside .mat/HDF5 (ignored for simulate)')
     p.add_argument('--mri_format',
-                   choices=['Hwihun_phantom','b1000','C','gslider','simulate'],
+                   choices=['Hwihun_phantom','b1000','C','gslider', 'gslider_2', 'simulate'],
                    default='b1000',
                    help="MRI data format (use 'simulate' for NIfTI input)")
     p.add_argument('--noise_mat',   required=False,
@@ -55,15 +58,18 @@ def main():
     p.add_argument('--noise_key',   default='k_gc',
                    help='Key inside noise .mat/HDF5 (ignored for simulate)')
     p.add_argument('--noise_format',
-                   choices=['Hwihun_phantom','b1000','C','gslider','simulate'],
+                   choices=['Hwihun_phantom','b1000','C','gslider', 'gslider_2','simulate'],
                    default='b1000',
                    help="Noise data format (only if --use_noise)")
     p.add_argument('--use_noise', action='store_true',
                    help="If set, load and feed a noise‐map as second channel")
     p.add_argument('--output_folder', default='./results_infer',
                    help='Where to save NIfTI outputs')
-    p.add_argument('--num_samples', type=int, default=1,
+    p.add_argument('--num_samples', type=int, default=2,
                    help='How many DWI channels to process (for MAT formats)')
+    p.add_argument('--dwi_index', type=int, default=None,
+               help='Specify which DWI sample index to denoise (0-based). If None, denoise all samples.')
+
     args = p.parse_args()
 
     os.makedirs(args.output_folder, exist_ok=True)
@@ -77,6 +83,7 @@ def main():
     )
     H, W, _, mri_slices, num_samples = mri_img.shape
     print("Loaded MRI:", mri_img.shape)
+    print("MRI min: ", mri_img.min(), "max: ", mri_img.max())
 
     # Compute global min/max for normalization
     eps = 1e-12
@@ -94,9 +101,29 @@ def main():
             data_format=args.noise_format
         )
         print("Loaded noise:", noise_img.shape)
-        noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, mri_slices)
+        # --- Adjust noise slices if fewer than MRI slices ---
+        if args.noise_format == 'gslider':
+            # noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, mri_slices)
+            _, _, _, noise_slices = noise_img.shape
+            if noise_slices < mri_slices:
+                print(f"Expanding noise slices: {noise_slices} -> {mri_slices} by repeating each slice 5 times")
+                noise_img_expanded = np.zeros((H, W, NUM_COILS, mri_slices), dtype=noise_img.dtype)
+                for z in range(mri_slices):
+                    src_z = min(z // 5, noise_slices - 1)  # avoid overflow
+                    noise_img_expanded[:, :, :, z] = noise_img[:, :, :, src_z]
+                    
+                # flip around the midpoint so max→min and min→max
+                mn, mx = noise_img_expanded.min(), noise_img_expanded.max()
+                noise_img_expanded = (mn + mx) - noise_img_expanded
+
+                noise_maps = noise_img_expanded
+
+        if args.noise_format == 'b1000':
+            noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, mri_slices)
+
         # collapse to 2D per coil
         noise_map2D = noise_maps.mean(axis=-1)  # (H, W, coils)
+        print("noise min: ", noise_map2D.min(), "max: ", noise_map2D.max())
         noise_norm = (noise_map2D - gmin) / (gmax - gmin + eps)
         noise_norm = np.clip(noise_norm, 0, 1)
 
@@ -114,7 +141,9 @@ def main():
     all_res   = []
     all_orig  = []
 
-    for sid in range(num_samples):
+    sample_indices = [args.dwi_index] if args.dwi_index is not None else list(range(num_samples))
+
+    for sid in sample_indices:
         print(f"Sample {sid+1}/{num_samples}")
         vol = mri_norm[..., sid]         # (H, W, coils, slices)
         orig = np.sqrt((vol**2).sum(axis=2))
@@ -124,6 +153,7 @@ def main():
         res_slices  = []
 
         for z in range(mri_slices):
+            print(f"  Denoising slice {z+1}/{mri_slices} for sample {sid+1}/{num_samples}")
             deno_coils = []
             res_coils  = []
             for c in range(NUM_COILS):
@@ -158,6 +188,18 @@ def main():
 
         deno_vol = np.stack(deno_slices, axis=2)
         res_vol  = np.stack(res_slices, axis=2)
+        # Save per-coil original and denoised results (H, W, Coils, Slices)
+        orig_path = os.path.join(args.output_folder, f"original_percoil_sample{sid+1}.nii")
+        deno_path = os.path.join(args.output_folder, f"denoised_percoil_sample{sid+1}.nii")
+        vol_transposed = np.transpose(vol, (0, 1, 3, 2))
+        # denormalize per‐coil original and denoised volumes
+        vol_denorm      = (vol_transposed         * (gmax - gmin + eps)) + gmin            # vol is mri_norm[...,sid]
+        deno_vol_denorm = (deno_vol    * (gmax - gmin + eps)) + gmin            # deno_vol from normalized input
+        # then transpose and save
+        vol_t = np.transpose(vol_denorm,      (0,1,3,2))
+        deno_t= np.transpose(deno_vol_denorm, (0,1,3,2))
+        nib.save(nib.Nifti1Image(vol_t.astype(np.float32), np.eye(4)), orig_path)
+        nib.save(nib.Nifti1Image(deno_t.astype(np.float32), np.eye(4)), deno_path)
 
         all_deno.append(np.sqrt((deno_vol**2).sum(axis=3)))
         all_res.append(np.sqrt((res_vol**2).sum(axis=3)))
@@ -167,12 +209,49 @@ def main():
     res4d  = np.stack(all_res, axis=-1)
     orig4d = np.stack(all_orig, axis=-1)
 
-    nib.save(nib.Nifti1Image(deno4d.astype(np.float32), np.eye(4)),
-             os.path.join(args.output_folder, 'combined_denoised_all.nii'))
-    nib.save(nib.Nifti1Image(res4d.astype(np.float32), np.eye(4)),
-             os.path.join(args.output_folder, 'combined_residual_all.nii'))
-    nib.save(nib.Nifti1Image(orig4d.astype(np.float32), np.eye(4)),
-             os.path.join(args.output_folder, 'original_coilcombined_all.nii'))
+    deno4d_denorm = deno4d * (gmax - gmin + eps) + gmin
+    res4d_denorm  = res4d  * (gmax - gmin + eps) + gmin
+    orig4d_denorm = orig4d * (gmax - gmin + eps) + gmin
+
+    # — compute log10(|residual|) histogram —
+    res_vals = res4d_denorm.ravel()
+    # 1) compute squared residuals
+    res_sq = res_vals**2
+
+    # 2) histogram with density=True
+    counts, bin_edges = np.histogram(res_sq, bins=100, density=True)
+    bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
+
+    # 3) log of the density
+    eps = 1e-12
+    log_counts = np.log(counts + eps)
+
+    # 4) plot
+    plt.figure()
+    plt.plot(bin_centers, log_counts, '.')
+    plt.title('ln PDF vs. residual² (Ours)')
+    plt.xlabel('residual²')
+    plt.ylabel('ln density')
+    plt.tight_layout()
+    plt.savefig(os.path.join(args.output_folder,
+                            'ours_residual_logpdf_vs_sq.png'))
+    plt.close()
+
+    # — compute kurtosis —
+    res_kurt = kurtosis(res_vals, fisher=True, bias=False)
+    print(f"[Ours] Residual kurtosis: {res_kurt:.6f}")
+
+    # — save kurtosis to text file —
+    kurt_file = os.path.join(args.output_folder, 'ours_residual_kurtosis.txt')
+    with open(kurt_file, 'w') as f:
+        f.write(f"Residual kurtosis: {res_kurt:.6f}\n")
+
+    nib.save(nib.Nifti1Image(deno4d_denorm.astype(np.float32), np.eye(4)), 
+            os.path.join(args.output_folder, 'combined_denoised_all.nii'))
+    nib.save(nib.Nifti1Image(res4d_denorm.astype(np.float32),  np.eye(4)), 
+            os.path.join(args.output_folder, 'combined_residual_all.nii'))
+    nib.save(nib.Nifti1Image(orig4d_denorm.astype(np.float32), np.eye(4)), 
+            os.path.join(args.output_folder, 'original_coilcombined_all.nii'))
 
     print("All outputs saved in", args.output_folder)
 

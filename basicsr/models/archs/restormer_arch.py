@@ -313,7 +313,7 @@ class Restormer(nn.Module):
             # Use different skip connections depending on output channels.
             if self.out_channels == 1:
                 # Compute the RSS over the first half of the input channels (assumed MRI images).
-                skip = torch.sqrt(torch.sum(inp_img[:, :self.out_channels, :, :] ** 2, dim=1, keepdim=True))
+                skip = inp_img[:, :self.out_channels, :, :]
             else:
                 # Otherwise, simply use the first out_channels from inp_img.
                 skip = inp_img[:, :self.out_channels, :, :]

@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pdb import set_trace as stx
 import numbers
-import pdb
 
 from einops import rearrange
 
@@ -57,19 +56,6 @@ class WithBias_LayerNorm(nn.Module):
         sigma = x.var(-1, keepdim=True, unbiased=False)
         return (x - mu) / torch.sqrt(sigma+1e-5) * self.weight + self.bias
 
-class DualInputEmbed(nn.Module):
-    def __init__(self, img_ch=1, noise_ch=1, embed_dim=48, bias=False):
-        super(DualInputEmbed, self).__init__()
-        assert embed_dim % 2 == 0, "Embed dimension must be divisible by 2."
-
-        self.img_embed = nn.Conv2d(img_ch, embed_dim//2, kernel_size=3, padding=1, bias=bias)
-        self.noise_embed = nn.Conv2d(noise_ch, embed_dim//2, kernel_size=3, padding=1, bias=bias)
-
-    def forward(self, x):
-        img, noise = x[:, :1, :, :], x[:, 1:, :, :]
-        img_feat = F.relu(self.img_embed(img))
-        noise_feat = F.relu(self.noise_embed(noise))
-        return torch.cat([img_feat, noise_feat], dim=1)
 
 class LayerNorm(nn.Module):
     def __init__(self, dim, LayerNorm_type):
@@ -119,20 +105,15 @@ class Attention(nn.Module):
         self.qkv = nn.Conv2d(dim, dim*3, kernel_size=1, bias=bias)
         self.qkv_dwconv = nn.Conv2d(dim*3, dim*3, kernel_size=3, stride=1, padding=1, groups=dim*3, bias=bias)
         self.project_out = nn.Conv2d(dim, dim, kernel_size=1, bias=bias)
+        
 
-        # Add this line:
-        self.noise_proj = nn.Conv2d(dim // 2, dim, kernel_size=1, bias=bias)
 
-    def forward(self, x, noise_embed=None):
-        b, c, h, w = x.shape
-
-        if noise_embed is not None:
-            noise_embed = self.noise_proj(noise_embed)
-            x = x + noise_embed  # Add (instead of concat) so dimensions remain unchanged
+    def forward(self, x):
+        b,c,h,w = x.shape
 
         qkv = self.qkv_dwconv(self.qkv(x))
-        q, k, v = qkv.chunk(3, dim=1)
-
+        q,k,v = qkv.chunk(3, dim=1)   
+        
         q = rearrange(q, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
         k = rearrange(k, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
         v = rearrange(v, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
@@ -144,12 +125,13 @@ class Attention(nn.Module):
         attn = attn.softmax(dim=-1)
 
         out = (attn @ v)
-
+        
         out = rearrange(out, 'b head c (h w) -> b (head c) h w', head=self.num_heads, h=h, w=w)
 
         out = self.project_out(out)
-
         return out
+
+
 
 ##########################################################################
 class TransformerBlock(nn.Module):
@@ -161,12 +143,12 @@ class TransformerBlock(nn.Module):
         self.norm2 = LayerNorm(dim, LayerNorm_type)
         self.ffn = FeedForward(dim, ffn_expansion_factor, bias)
 
-    def forward(self, x, noise_embed=None):
-        y = self.norm1(x)
-        attn_out = self.attn(y, noise_embed=noise_embed)
-        x = x + attn_out
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
         x = x + self.ffn(self.norm2(x))
+
         return x
+
 
 
 ##########################################################################
@@ -226,7 +208,7 @@ class Restormer(nn.Module):
 
         self.out_channels = out_channels
 
-        self.patch_embed = DualInputEmbed(img_ch=1, noise_ch=1, embed_dim=dim)
+        self.patch_embed = OverlapPatchEmbed(inp_channels, dim)
 
         self.encoder_level1 = nn.Sequential(*[TransformerBlock(dim=dim, num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
         
@@ -260,22 +242,16 @@ class Restormer(nn.Module):
             self.skip_conv = nn.Conv2d(dim, int(dim*2**1), kernel_size=1, bias=bias)
         ###########################
 
+        # Modify the final output layer to use grouped convolution so that each output channel is computed independently.
+        # self.output = nn.Conv2d(int(dim*2**1), out_channels, kernel_size=3, stride=1, padding=1, 
+        #                         bias=bias, groups=out_channels)
+
         self.output = nn.Conv2d(int(dim*2**1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
 
     def forward(self, inp_img):
 
-        # 1) fuse image+noise → 48-ch
-        inp_enc_level1 = self.patch_embed(inp_img)             # [B,48,H,W]
-
-        # 2) split off just the 24-ch noise
-        noise_embed = inp_enc_level1[:, inp_enc_level1.shape[1]//2:, :, :]  # [B,24,H,W]
-
-        # 3) keep the full 48-ch as your input x
-        out_enc_level1 = inp_enc_level1                                # [B,48,H,W]
-
-        # 4) inside Attention, noise_embed gets projected→48 and added back
-        for blk in self.encoder_level1:
-            out_enc_level1 = blk(out_enc_level1, noise_embed=noise_embed)
+        inp_enc_level1 = self.patch_embed(inp_img)
+        out_enc_level1 = self.encoder_level1(inp_enc_level1)
         
         inp_enc_level2 = self.down1_2(out_enc_level1)
         out_enc_level2 = self.encoder_level2(inp_enc_level2)

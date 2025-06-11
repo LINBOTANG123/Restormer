@@ -52,6 +52,7 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
 
     if h5py.is_hdf5(mat_path):
         with h5py.File(mat_path, 'r') as f:
+            print("HDF5 keys:", list(f.keys()))
             if key not in f:
                 raise KeyError(f"Key '{key}' not found in {mat_path}")
             raw = f[key][()]

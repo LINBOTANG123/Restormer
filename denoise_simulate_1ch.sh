@@ -1,8 +1,8 @@
 # Paths
 MODEL_PTH="/home/lin/Research/denoise/Restormer/Denoising/pretrained_models/gaussian_gray_denoising_sigma50.pth"
-MRI_NII="/home/lin/Research/denoise/util/output_simulated_fullstack/0802x2_noisy_stack.nii"
-NOISE_NII="/home/lin/Research/denoise/util/output_simulated_fullstack/0802x2_noise_map_stack.nii"
-OUTPUT_DIR="results_simulate_norm_1ch"
+MRI_NII="/home/lin/Research/denoise/util/output_simulated_snr_data1/snr20/csm/0802x2_noisy_stack.nii"
+NOISE_NII="/home/lin/Research/denoise/util/output_simulated_snr_data1/snr20/csm/0802x2_noise_map_stack.nii"
+OUTPUT_DIR="results_simulate_snr20_1ch"
 
 # Other params
 NUM_SAMPLES=1

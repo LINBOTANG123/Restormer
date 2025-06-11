@@ -62,6 +62,7 @@ def load_mri_data(
     
     if h5py.is_hdf5(file_path):
         with h5py.File(file_path, 'r') as f:
+            print("HDF5 keys:", list(f.keys()))
             if key not in f:
                 raise KeyError(f"Key '{key}' not found in {file_path}")
             raw_data = f[key][()]
@@ -111,6 +112,15 @@ def load_mri_data(
         if num_samples_to_load is not None:
             sel = sel[:num_samples_to_load, ...]
         data = np.transpose(sel, (3, 4, 2, 1, 0))  # (H, W, coils, slices, dwi)  # (H, W, coils, slices, dwi)
+    elif data_format == 'gslider_2':
+        if raw_data.ndim != 5:
+            raise ValueError(f"Expected 5D gslider data, got {raw_data.shape}")
+        num_coil, n_dwi, num_slices, H, W = raw_data.shape
+        if num_samples_to_load is not None:
+            sel = raw_data[:, :num_samples_to_load, ...]
+        data = np.transpose(sel, (3, 4, 0, 2, 1))  # (H, W, coils, slices, dwi)  # (H, W, coils, slices, dwi)
+        print("Final loaded gslider_2 shape: ", data.shape)
+        return np.abs(data).astype(np.float32)
     else:
         raise ValueError(f"Unrecognized data_format: {data_format}")
 
