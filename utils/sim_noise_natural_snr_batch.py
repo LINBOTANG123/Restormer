@@ -89,8 +89,8 @@ for image_path in png_paths:
         noise_cc = np.sqrt((noise_stack ** 2).sum(axis=-1))
 
         # 7) save NIfTIs
-        nib.save(nib.Nifti1Image(clean_stack,     np.eye(4)),
-                 os.path.join(csm_dir, f'{base}_clean_stack.nii'))
+        # nib.save(nib.Nifti1Image(clean_stack,     np.eye(4)),
+        #          os.path.join(csm_dir, f'{base}_clean_stack.nii'))
         nib.save(nib.Nifti1Image(noisy_stack,     np.eye(4)),
                  os.path.join(csm_dir, f'{base}_noisy_stack.nii'))
         nib.save(nib.Nifti1Image(noise_map_stack, np.eye(4)),

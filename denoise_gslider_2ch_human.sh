@@ -1,11 +1,11 @@
 # Paths
-MODEL_PTH="/home/lin/Research/denoise/Restormer/weights/newattn_208000.pth"
-MRI_MAT="/home/lin/Research/denoise/data/gslider_2/Img_Super_image_coil.mat"
-NOISE_MAT="/home/lin/Research/denoise/data/newdata/pf1_noise_v4.mat"
-OUTPUT_DIR="results_gslider_new_2ch"
+MODEL_PTH="/home/lin/Research/denoise/Restormer/weights/new_model_net_g_220000.pth"
+MRI_MAT="/home/lin/Research/denoise/data/new_human/HR005.mat"
+NOISE_MAT="/home/lin/Research/denoise/data/new_human/pf1_noise_v4.mat"
+OUTPUT_DIR="results_gslider_mask_norm_1.0"
 
 # Other params
-NUM_SAMPLES=2
+NUM_SAMPLES=1
 MRI_FORMAT="gslider_2"
 NOISE_FORMAT="gslider"
 
@@ -21,4 +21,5 @@ python inference_final.py \
   --mri_format   "$MRI_FORMAT" \
   --use_noise \
   --noise_format "$NOISE_FORMAT" \
-  --dwi_index 1
+  --dwi_index 0 \
+  --mask_nifti /home/lin/Research/denoise/results/gslider_new_human/new_3D_slicer_mask_by_hand.nii \

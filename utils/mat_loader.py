@@ -118,7 +118,7 @@ def load_mri_data(
         num_coil, n_dwi, num_slices, H, W = raw_data.shape
         if num_samples_to_load is not None:
             sel = raw_data[:, :num_samples_to_load, ...]
-        data = np.transpose(sel, (3, 4, 0, 2, 1))  # (H, W, coils, slices, dwi)  # (H, W, coils, slices, dwi)
+        data = np.transpose(sel, (3, 4, 0, 2, 1)) /29.0 # (H, W, coils, slices, dwi)  # (H, W, coils, slices, dwi)
         print("Final loaded gslider_2 shape: ", data.shape)
         return np.abs(data).astype(np.float32)
     else:

@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import skimage.exposure as ex
 import matplotlib.pyplot as plt
 from scipy.stats import kurtosis
-
+import pdb
 from utils.mat_loader    import load_mri_data
 from utils.noise_loader import load_noise_data, replicate_noise_map_with_sampling
 
@@ -69,6 +69,9 @@ def main():
                    help='How many DWI channels to process (for MAT formats)')
     p.add_argument('--dwi_index', type=int, default=None,
                help='Specify which DWI sample index to denoise (0-based). If None, denoise all samples.')
+    p.add_argument('--mask_nifti', required=False,
+                help='Optional brain mask NIfTI (.nii or .nii.gz) to restrict denoising to brain tissue')
+
 
     args = p.parse_args()
 
@@ -81,15 +84,32 @@ def main():
         data_format=args.mri_format,
         num_samples_to_load=args.num_samples
     )
-    H, W, _, mri_slices, num_samples = mri_img.shape
+    H, W, C, S, N = mri_img.shape
     print("Loaded MRI:", mri_img.shape)
-    print("MRI min: ", mri_img.min(), "max: ", mri_img.max())
+    print("MRI min: ", mri_img.min(), "max: ", mri_img.max(), "mean: ", np.mean(mri_img), "std: ", np.std(mri_img))
 
-    # Compute global min/max for normalization
-    eps = 1e-12
-    gmin, gmax = float(mri_img.min()), float(mri_img.max())
-    mri_norm = (mri_img - gmin) / (gmax - gmin + eps)
-    mri_norm = np.clip(mri_norm, 0, 1)
+    # --- 2) Optional brain mask --------------------------------------------------
+    if args.mask_nifti:
+        mask = nib.load(args.mask_nifti).get_fdata().astype(bool)          # (H,W,S)
+        if mask.shape != (H, W, S):
+            raise ValueError(f"Mask shape {mask.shape} != {(H,W,S)}")
+        # broadcast & apply to MRI  (H,W,S,1,1) -> (H,W,C,S,N)
+        mri_img *= mask[:, :, None, :, None]
+        mask_full = np.broadcast_to(mask[:, :, None, :, None], mri_img.shape)
+        brain_voxels = mri_img[mask_full]
+        p_cap = np.percentile(brain_voxels, 99.8)
+
+    else:
+        mask = None
+        p_cap = np.percentile(mri_img, 99.8)
+
+    # scale_factor = 0.99 / (p_cap + 1e-12)
+    # scale_factor = 3e6
+    scale_factor = 1.0
+    print(f"Dynamic scale factor: {scale_factor:.3e}")
+
+    mri_scaled = np.clip(mri_img * scale_factor, 0, 1)
+
 
     # --- 2) Optionally load Noise (2nd channel) ---
     if args.use_noise:
@@ -103,33 +123,68 @@ def main():
         print("Loaded noise:", noise_img.shape)
         # --- Adjust noise slices if fewer than MRI slices ---
         if args.noise_format == 'gslider':
-            # noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, mri_slices)
             _, _, _, noise_slices = noise_img.shape
-            if noise_slices < mri_slices:
-                print(f"Expanding noise slices: {noise_slices} -> {mri_slices} by repeating each slice 5 times")
-                noise_img_expanded = np.zeros((H, W, NUM_COILS, mri_slices), dtype=noise_img.dtype)
-                for z in range(mri_slices):
-                    src_z = min(z // 5, noise_slices - 1)  # avoid overflow
-                    noise_img_expanded[:, :, :, z] = noise_img[:, :, :, src_z]
-                    
-                # flip around the midpoint so max→min and min→max
-                mn, mx = noise_img_expanded.min(), noise_img_expanded.max()
-                noise_img_expanded = (mn + mx) - noise_img_expanded
-
-                noise_maps = noise_img_expanded
-
+            mn, mx = noise_img.min(), noise_img.max()
+            noise_maps = (mn + mx) - noise_img
+            # Assuming noise_maps has shape (H, W, C, 34)
+            repeats = [5] * 34  # Repeat each slice 5 times
+            noise_maps = np.repeat(noise_maps, repeats, axis=3)  # Expand along last dimension
+            print("Expanded noise maps shape:", noise_maps.shape)  # Should be (290, 290, 32, 170)
         if args.noise_format == 'b1000':
-            noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, mri_slices)
+            noise_maps = replicate_noise_map_with_sampling(noise_img, H, W, S)
 
         # collapse to 2D per coil
-        noise_map2D = noise_maps.mean(axis=-1)  # (H, W, coils)
-        print("noise min: ", noise_map2D.min(), "max: ", noise_map2D.max())
-        noise_norm = (noise_map2D - gmin) / (gmax - gmin + eps)
+        print("NOISE MAP min: ", noise_maps.min(), "max: ", noise_maps.max(),  "mean: ", np.mean(noise_maps), "std", np.std(noise_maps))
+
+        # apply mask to noise
+        if mask is not None:
+            noise_maps *= mask[:, :, None, :]
+            
+        # --- 2b) Brain-masked raw stats ---------------------------------------------
+        if mask is not None:
+            # MRI stats
+            mask_full = np.broadcast_to(mask[:, :, None, :, None], mri_img.shape)  # (H,W,C,S,N)
+            valid_mri = mri_img[mask_full] 
+            print(f"[RAW brain]  MRI   min={valid_mri.min():.4g} "
+                f"max={valid_mri.max():.4g} "
+                f"mean={valid_mri.mean():.4g} "
+                f"std={valid_mri.std():.4g} "
+                f"p10={np.percentile(valid_mri,10):.4g} "
+                f"p90={np.percentile(valid_mri,90):.4g}")
+
+            if args.use_noise:
+                mask_noise = np.broadcast_to(mask[:, :, None, :], noise_maps.shape)    # (H,W,C,S)
+                valid_noise = noise_maps[mask_noise]
+                print(f"[RAW brain]  Noise min={valid_noise.min():.4g} "
+                    f"max={valid_noise.max():.4g} "
+                    f"mean={valid_noise.mean():.4g} "
+                    f"std={valid_noise.std():.4g} "
+                    f"p10={np.percentile(valid_noise,10):.4g} "
+                    f"p90={np.percentile(valid_noise,90):.4g}")
+
+        noise_norm = noise_maps.mean(axis=-1)  # (H, W, coils)
+
+        noise_norm = noise_norm * scale_factor
         noise_norm = np.clip(noise_norm, 0, 1)
 
-        # save the per-coil noise map for inspection
+        # noise_lin = noise_map2D * scale_factor
+        # noise_lin = noise_map2D
+        # # percentile-based gain
+        # p99   = np.percentile(noise_lin, 99)
+        # gamma = 0.095 / (p99 + 1e-12)          # use 0.08 if you want the 99-th % at 0.08
+        # noise_norm = np.clip(noise_lin * gamma, 0, 0.095)
+
+        # print("noise   mean :", noise_norm.mean())
+        # print("noise  95th% :", np.percentile(noise_norm, 95))
+        # print("noise   max  :", noise_norm.max())
+        # ------------------------------------------------------------
+
+        # save for inspection (optional)
         nib.save(nib.Nifti1Image(noise_norm.astype(np.float32), np.eye(4)),
-                 os.path.join(args.output_folder, 'noise_map.nii'))
+                os.path.join(args.output_folder, 'noise_map_scaled.nii'))
+        nib.save(nib.Nifti1Image(noise_maps.astype(np.float32), np.eye(4)),
+                os.path.join(args.output_folder, 'noise_map_raw.nii'))
+
 
     # --- 3) Load model with dynamic input channels ---
     inp_ch = 2 if args.use_noise else 1
@@ -141,19 +196,19 @@ def main():
     all_res   = []
     all_orig  = []
 
-    sample_indices = [args.dwi_index] if args.dwi_index is not None else list(range(num_samples))
+    sample_indices = [args.dwi_index] if args.dwi_index is not None else list(range(N))
 
     for sid in sample_indices:
-        print(f"Sample {sid+1}/{num_samples}")
-        vol = mri_norm[..., sid]         # (H, W, coils, slices)
+        print(f"Sample {sid+1}/{S}")
+        vol = mri_scaled[..., sid]         # (H, W, coils, slices)
         orig = np.sqrt((vol**2).sum(axis=2))
         all_orig.append(orig)
 
         deno_slices = []
         res_slices  = []
 
-        for z in range(mri_slices):
-            print(f"  Denoising slice {z+1}/{mri_slices} for sample {sid+1}/{num_samples}")
+        for z in range(S):
+            print(f"  Denoising slice {z+1}/{S} for sample {sid+1}/{S}")
             deno_coils = []
             res_coils  = []
             for c in range(NUM_COILS):
@@ -177,6 +232,10 @@ def main():
                 with torch.no_grad():
                     out = model(inp)
                 out    = out[..., :h, :w]
+                # --- new: debias ---
+                bias = (out - inp[:, 0:1, :h, :w]).mean()     # scalar
+                out = out - bias                      # add back the mean
+
                 target = inp[:, 0:1, :h, :w]
                 res    = out - target
 
@@ -189,62 +248,39 @@ def main():
         deno_vol = np.stack(deno_slices, axis=2)
         res_vol  = np.stack(res_slices, axis=2)
         # Save per-coil original and denoised results (H, W, Coils, Slices)
+        # --- Save per-coil volumes (brain-masked, correct axis order) -------------
+        deno_vol_t = deno_vol
+        if mask is not None:
+            brain_mask_4d = mask[..., None]                        # (H,W,S,1)
+            vol_denorm  = (np.transpose(vol, (0, 1, 3, 2)) / scale_factor) * brain_mask_4d
+            deno_denorm = (deno_vol_t / scale_factor) * brain_mask_4d
+        else:
+            vol_denorm  = np.transpose(vol, (0, 1, 3, 2)) / scale_factor
+            deno_denorm = deno_vol_t / scale_factor
+
         orig_path = os.path.join(args.output_folder, f"original_percoil_sample{sid+1}.nii")
         deno_path = os.path.join(args.output_folder, f"denoised_percoil_sample{sid+1}.nii")
-        vol_transposed = np.transpose(vol, (0, 1, 3, 2))
-        # denormalize per‐coil original and denoised volumes
-        vol_denorm      = (vol_transposed         * (gmax - gmin + eps)) + gmin            # vol is mri_norm[...,sid]
-        deno_vol_denorm = (deno_vol    * (gmax - gmin + eps)) + gmin            # deno_vol from normalized input
-        # then transpose and save
-        vol_t = np.transpose(vol_denorm,      (0,1,3,2))
-        deno_t= np.transpose(deno_vol_denorm, (0,1,3,2))
-        nib.save(nib.Nifti1Image(vol_t.astype(np.float32), np.eye(4)), orig_path)
-        nib.save(nib.Nifti1Image(deno_t.astype(np.float32), np.eye(4)), deno_path)
+
+        # nib.save(nib.Nifti1Image(vol_denorm.astype(np.float32),  np.eye(4)), orig_path)
+        # nib.save(nib.Nifti1Image(deno_denorm.astype(np.float32), np.eye(4)), deno_path)
 
         all_deno.append(np.sqrt((deno_vol**2).sum(axis=3)))
         all_res.append(np.sqrt((res_vol**2).sum(axis=3)))
 
+    if mask is not None:
+        brain_mask_3d = mask.astype(np.float32)       # (H,W,S)
+        for i in range(len(all_orig)):
+            all_orig[i] *= brain_mask_3d
+            all_deno[i] *= brain_mask_3d
+            all_res[i]  *= brain_mask_3d
     # --- 5) Assemble & Save ---
     deno4d = np.stack(all_deno, axis=-1)
     res4d  = np.stack(all_res, axis=-1)
     orig4d = np.stack(all_orig, axis=-1)
 
-    deno4d_denorm = deno4d * (gmax - gmin + eps) + gmin
-    res4d_denorm  = res4d  * (gmax - gmin + eps) + gmin
-    orig4d_denorm = orig4d * (gmax - gmin + eps) + gmin
-
-    # — compute log10(|residual|) histogram —
-    res_vals = res4d_denorm.ravel()
-    # 1) compute squared residuals
-    res_sq = res_vals**2
-
-    # 2) histogram with density=True
-    counts, bin_edges = np.histogram(res_sq, bins=100, density=True)
-    bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
-
-    # 3) log of the density
-    eps = 1e-12
-    log_counts = np.log(counts + eps)
-
-    # 4) plot
-    plt.figure()
-    plt.plot(bin_centers, log_counts, '.')
-    plt.title('ln PDF vs. residual² (Ours)')
-    plt.xlabel('residual²')
-    plt.ylabel('ln density')
-    plt.tight_layout()
-    plt.savefig(os.path.join(args.output_folder,
-                            'ours_residual_logpdf_vs_sq.png'))
-    plt.close()
-
-    # — compute kurtosis —
-    res_kurt = kurtosis(res_vals, fisher=True, bias=False)
-    print(f"[Ours] Residual kurtosis: {res_kurt:.6f}")
-
-    # — save kurtosis to text file —
-    kurt_file = os.path.join(args.output_folder, 'ours_residual_kurtosis.txt')
-    with open(kurt_file, 'w') as f:
-        f.write(f"Residual kurtosis: {res_kurt:.6f}\n")
+    deno4d_denorm = deno4d / scale_factor
+    res4d_denorm  = res4d / scale_factor
+    orig4d_denorm = orig4d / scale_factor
 
     nib.save(nib.Nifti1Image(deno4d_denorm.astype(np.float32), np.eye(4)), 
             os.path.join(args.output_folder, 'combined_denoised_all.nii'))
