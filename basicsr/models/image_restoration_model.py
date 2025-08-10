@@ -9,6 +9,7 @@ import nibabel as nib
 from basicsr.models.archs import define_network
 from basicsr.models.base_model import BaseModel
 from basicsr.utils import get_root_logger, imwrite, tensor2img
+from basicsr.models.losses.custom_losses import EdgeLoss
 
 loss_module = importlib.import_module('basicsr.models.losses')
 metric_module = importlib.import_module('basicsr.metrics')
@@ -136,6 +137,34 @@ class ImageCleanModel(BaseModel):
             cri_pix_cls = getattr(loss_module, pixel_type)
             self.cri_pix = cri_pix_cls(**train_opt['pixel_opt']).to(
                 self.device)
+            
+
+            # ---------------- Edge loss -----------------
+            edge_cfg = train_opt.get('edge_opt')
+            if edge_cfg:
+                self.cri_edge = EdgeLoss().to(self.device)
+                self.edge_weight = edge_cfg.get('weight', 0.05)
+            else:
+                self.cri_edge = None
+
+            # ---------------- Perceptual loss -----------
+            perc_cfg = train_opt.get('perc_opt')
+            if perc_cfg:
+                # pull out the weight so it doesn’t get passed to __init__
+                perc_weight = perc_cfg.pop('weight', 0.01)
+                # pull out the class name
+                perc_type   = perc_cfg.pop('type')
+                perc_cls    = getattr(loss_module, perc_type)
+                self.cri_perc   = perc_cls(**perc_cfg).to(self.device)
+                self.perc_weight = perc_weight
+                print("percept weight: ", self.perc_weight)
+            else:
+                self.cri_perc = None
+
+            # -------- Total-variation weight ------------
+            self.tv_weight = train_opt.get('tv_weight', 0.0)
+
+
         else:
             raise ValueError('pixel loss are None.')
 
@@ -182,22 +211,65 @@ class ImageCleanModel(BaseModel):
         preds = self.net_g(self.lq)
         if not isinstance(preds, list):
             preds = [preds]
-
         self.output = preds[-1]
 
-        loss_dict = OrderedDict()
-        # Pixel loss
-        l_pix = 0.
-        for pred in preds:
-            l_pix += self.cri_pix(pred, self.gt)
-        loss_dict['l_pix'] = l_pix
+        # ---------- Pixel loss ----------
+        l_total = 0.0
+        l_pix   = sum(self.cri_pix(p, self.gt) for p in preds)
+        l_total += l_pix
+        loss_dict = OrderedDict(l_pix=l_pix)
 
-        l_pix.backward()
+        # ---------- Edge loss ----------
+        if self.cri_edge is not None:
+            l_edge = self.edge_weight * self.cri_edge(self.output, self.gt)
+            l_total += l_edge
+            loss_dict['l_edge'] = l_edge
+
+        # ---------- Perceptual loss -----
+        if self.cri_perc is not None:
+            l_perc = self.perc_weight * self.cri_perc(self.output, self.gt)
+            l_total += l_perc
+            loss_dict['l_perc'] = l_perc
+
+        # ---------- TV on residual ------
+        if self.tv_weight > 0:
+            residual = self.output - self.lq
+            tv = (residual[:, :, :-1] - residual[:, :, 1:]).abs().mean() + \
+                (residual[:, :, :, :-1] - residual[:, :, :, 1:]).abs().mean()
+            l_tv = self.tv_weight * tv
+            l_total += l_tv
+            loss_dict['l_tv'] = l_tv
+
+        # ---------- Back-prop ----------
+        l_total.backward()
         if self.opt['train']['use_grad_clip']:
             torch.nn.utils.clip_grad_norm_(self.net_g.parameters(), 0.01)
         self.optimizer_g.step()
 
         self.log_dict = self.reduce_loss_dict(loss_dict)
+
+
+
+        # preds = self.net_g(self.lq)
+        # if not isinstance(preds, list):
+        #     preds = [preds]
+
+        # self.output = preds[-1]
+
+        # loss_dict = OrderedDict()
+        # # Pixel loss
+        # l_pix = 0.
+        # for pred in preds:
+        #     l_pix += self.cri_pix(pred, self.gt)
+        # loss_dict['l_pix'] = l_pix
+
+        # l_pix.backward()
+
+        # if self.opt['train']['use_grad_clip']:
+        #     torch.nn.utils.clip_grad_norm_(self.net_g.parameters(), 0.01)
+        # self.optimizer_g.step()
+
+        # self.log_dict = self.reduce_loss_dict(loss_dict)
 
         if self.ema_decay > 0:
             self.model_ema(decay=self.ema_decay)
