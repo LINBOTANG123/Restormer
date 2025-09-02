@@ -111,21 +111,17 @@ class FeedForward(nn.Module):
 ##########################################################################
 ## Multi-DConv Head Transposed Self-Attention (MDTA)
 class Attention(nn.Module):
-    def __init__(self, dim, num_heads, bias, use_noise=False):
-        super().__init__()
-        self.use_noise = use_noise          # ← NEW FLAG
-        in_ch = dim * 2 if use_noise else dim
-
-        self.num_heads  = num_heads
+    def __init__(self, dim, num_heads, bias):
+        super(Attention, self).__init__()
+        self.num_heads = num_heads
         self.temperature = nn.Parameter(torch.ones(num_heads, 1, 1))
 
-        self.qkv        = nn.Conv2d(in_ch, dim * 3, 1, bias=bias)
-        self.qkv_dwconv = nn.Conv2d(dim * 3, dim * 3, 3, 1, 1,
-                                    groups=dim * 3, bias=bias)
-        self.project_out = nn.Conv2d(dim, dim, 1, bias=bias)
+        self.qkv = nn.Conv2d(dim, dim*3, kernel_size=1, bias=bias)
+        self.qkv_dwconv = nn.Conv2d(dim*3, dim*3, kernel_size=3, stride=1, padding=1, groups=dim*3, bias=bias)
+        self.project_out = nn.Conv2d(dim, dim, kernel_size=1, bias=bias)
 
-        if use_noise:                       # only needed at Level-1
-            self.noise_proj = nn.Conv2d(dim // 2, dim, 1, bias=bias)
+        # Add this line:
+        self.noise_proj = nn.Conv2d(dim // 2, dim, kernel_size=1, bias=bias)
 
     def forward(self, x, noise_embed=None):
         b, c, h, w = x.shape
@@ -135,9 +131,11 @@ class Attention(nn.Module):
         #     noise_embed = self.noise_proj(noise_embed)
         #     x = x + noise_embed  # Add (instead of concat) so dimensions remain unchanged
         
-        if self.use_noise and noise_embed is not None:
-            noise_embed = self.noise_proj(noise_embed)
-            x = torch.cat([x, noise_embed], dim=1)   # channel-concat
+        # if noise_embed is not None:
+        #     noise_embed = self.noise_proj(noise_embed)
+        #     x = torch.cat([x, noise_embed], dim=1)   # channel-concat
+        #     # Adjust qkv to accept double channels:
+        #     qkv = self.qkv_dwconv(self.qkv(x))
 
         qkv = self.qkv_dwconv(self.qkv(x))
         q, k, v = qkv.chunk(3, dim=1)
@@ -162,11 +160,11 @@ class Attention(nn.Module):
 
 ##########################################################################
 class TransformerBlock(nn.Module):
-    def __init__(self, dim, num_heads, ffn_expansion_factor, bias, LayerNorm_type, use_noise=False):
+    def __init__(self, dim, num_heads, ffn_expansion_factor, bias, LayerNorm_type):
         super(TransformerBlock, self).__init__()
 
         self.norm1 = LayerNorm(dim, LayerNorm_type)
-        self.attn = Attention(dim, num_heads, bias, use_noise)
+        self.attn = Attention(dim, num_heads, bias)
         self.norm2 = LayerNorm(dim, LayerNorm_type)
         self.ffn = FeedForward(dim, ffn_expansion_factor, bias)
 
@@ -237,39 +235,31 @@ class Restormer(nn.Module):
 
         self.patch_embed = DualInputEmbed(img_ch=1, noise_ch=1, embed_dim=dim)
 
-        self.encoder_level1 = nn.Sequential(*[
-            TransformerBlock(dim, heads[0], ffn_expansion_factor,
-                            bias, LayerNorm_type, use_noise=True)
-            for _ in range(num_blocks[0])
-        ])     
-
+        self.encoder_level1 = nn.Sequential(*[TransformerBlock(dim=dim, num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
+        
         self.down1_2 = Downsample(dim) ## From Level 1 to Level 2
-        self.encoder_level2 = nn.Sequential(*[
-            TransformerBlock(dim*2, heads[1], ffn_expansion_factor,
-                            bias, LayerNorm_type, use_noise=False)
-            for _ in range(num_blocks[1])
-        ])
-
+        self.encoder_level2 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[1], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[1])])
+        
         self.down2_3 = Downsample(int(dim*2**1)) ## From Level 2 to Level 3
-        self.encoder_level3 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**2), num_heads=heads[2], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_blocks[2])])
+        self.encoder_level3 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**2), num_heads=heads[2], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[2])])
 
         self.down3_4 = Downsample(int(dim*2**2)) ## From Level 3 to Level 4
-        self.latent = nn.Sequential(*[TransformerBlock(dim=int(dim*2**3), num_heads=heads[3], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_blocks[3])])
+        self.latent = nn.Sequential(*[TransformerBlock(dim=int(dim*2**3), num_heads=heads[3], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[3])])
         
         self.up4_3 = Upsample(int(dim*2**3)) ## From Level 4 to Level 3
         self.reduce_chan_level3 = nn.Conv2d(int(dim*2**3), int(dim*2**2), kernel_size=1, bias=bias)
-        self.decoder_level3 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**2), num_heads=heads[2], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_blocks[2])])
+        self.decoder_level3 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**2), num_heads=heads[2], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[2])])
 
 
         self.up3_2 = Upsample(int(dim*2**2)) ## From Level 3 to Level 2
         self.reduce_chan_level2 = nn.Conv2d(int(dim*2**2), int(dim*2**1), kernel_size=1, bias=bias)
-        self.decoder_level2 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[1], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_blocks[1])])
+        self.decoder_level2 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[1], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[1])])
         
         self.up2_1 = Upsample(int(dim*2**1))  ## From Level 2 to Level 1  (NO 1x1 conv to reduce channels)
 
-        self.decoder_level1 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_blocks[0])])
+        self.decoder_level1 = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_blocks[0])])
         
-        self.refinement = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type, use_noise=False) for i in range(num_refinement_blocks)])
+        self.refinement = nn.Sequential(*[TransformerBlock(dim=int(dim*2**1), num_heads=heads[0], ffn_expansion_factor=ffn_expansion_factor, bias=bias, LayerNorm_type=LayerNorm_type) for i in range(num_refinement_blocks)])
         
         #### For Dual-Pixel Defocus Deblurring Task ####
         self.dual_pixel_task = dual_pixel_task

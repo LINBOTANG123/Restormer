@@ -98,8 +98,8 @@ def main():
             out = model(inp)
             out = out[..., :h0, :w0]
             # debias (as in your script)
-            bias = (out - inp[:, 0:1, :h0, :w0]).mean()
-            out = out - bias
+            # bias = (out - inp[:, 0:1, :h0, :w0]).mean()
+            # out = out - bias
 
         deno = out.cpu().squeeze().numpy()  # [H,W]
 

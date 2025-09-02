@@ -20,7 +20,18 @@ def process_noise_kspace_to_img(kspace_2d):
     return np.abs(img_complex).astype(np.float32)
 
 
-def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
+def process_noise_kspace_to_img_complex(kspace_2d):
+    """
+    IFFT of a 2D k-space NOISE slice to COMPLEX image space.
+    Returns complex64; no magnitude taken.
+    """
+    shifted = np.fft.ifftshift(kspace_2d)
+    img_complex = np.fft.ifft2(shifted)
+    img_complex = np.fft.fftshift(img_complex)
+    return img_complex.astype(np.complex64)
+
+
+def load_noise_data(mat_path, key='k_gc', data_format='b1000', output_space='magnitude'):
     """
     Load pure-noise k-space from a .mat or HDF5 file and convert to image-space.
 
@@ -32,17 +43,10 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
 
     Parameters
     ----------
-    mat_path : str
-        Path to the .mat or HDF5 file containing noise k-space.
-    key : str
-        Dataset key inside the file.
-    data_format : {'Hwihun_phantom', 'b1000', 'C', 'gslider'}
-        Format of the stored noise. Use 'gslider' for the new pure-noise version.
-
-    Returns
-    -------
-    noise_imgspace : np.ndarray, shape (H, W, num_coils, noise_slices)
-        The magnitude images of pure noise, ready for replication or mapping.
+    ...
+    output_space : {'magnitude', 'complex_image'}
+        'magnitude' (default): previous behavior (float32 magnitude images).
+        'complex_image'      : return complex64 image-space noise (no magnitude).
     """
     if data_format == 'simulate':
         img = nib.load(mat_path)
@@ -88,11 +92,21 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
             raise ValueError(f"Unexpected noise shape {raw.shape} for format {data_format}")
     elif data_format == 'gslider':
         # Expect raw shape: (num_coils, noise_slices, H, W)
+        print("Raw noise shape: ", raw.shape)
         if raw.ndim != 4:
             raise ValueError(f"Expected 4D noise for 'gslider', got {raw.shape}")
         num_coils, noise_slices, H, W = raw.shape
         # Transpose to (H, W, coils, slices)
         data = np.transpose(raw, (2, 3, 0, 1))
+    elif data_format == 'gslider_v5':
+        # Expect raw shape: (num_coils, noise_slices, H, W)
+        print("Raw noise shape: ", raw.shape)
+        if raw.ndim != 4:
+            raise ValueError(f"Expected 4D noise for 'gslider', got {raw.shape}")
+        num_coils, noise_slices, H, W = raw.shape
+        # Transpose to (H, W, coils, slices)
+        data = np.transpose(raw, (2, 3, 1, 0))
+        return data
     else:
         raise ValueError(f"Unrecognized data_format: {data_format}")
 
@@ -101,13 +115,30 @@ def load_noise_data(mat_path, key='k_gc', data_format='b1000'):
         raise ValueError(f"After reorder, expected 4D array, got {data.shape}")
     H, W, num_coils, noise_slices = data.shape
 
-    # 5) Convert each k-space slice to magnitude image
-    noise_imgspace = np.empty((H, W, num_coils, noise_slices), dtype=np.float32)
-    for c in range(num_coils):
-        for s in range(noise_slices):
-            noise_imgspace[:, :, c, s] = process_noise_kspace_to_img(data[:, :, c, s])
+    if output_space == 'magnitude':
+        noise_imgspace = np.empty((H, W, num_coils, noise_slices), dtype=np.float32)
+        for c in range(num_coils):
+            for s in range(noise_slices):
+                # If data is already image-domain, this will still work if you want magnitude;
+                # if it's k-space, this does the IFFT to magnitude as before.
+                noise_imgspace[:, :, c, s] = process_noise_kspace_to_img(data[:, :, c, s])
+        return noise_imgspace
+    elif output_space == 'complex_kimage':  # 'complex_image'
+        # If data is k-space -> IFFT to complex. If already image-domain complex,
+        # bypass IFFT by detecting and returning directly.
+        if np.iscomplexobj(data):
+            print("WRONG KIMAGE")
+            return data.astype(np.complex64)
+        print("CORRECT KIMAGE")
+        noise_imgspace = np.empty((H, W, num_coils, noise_slices), dtype=np.complex64)
+        for c in range(num_coils):
+            for s in range(noise_slices):
+                noise_imgspace[:, :, c, s] = process_noise_kspace_to_img_complex(data[:, :, c, s])
+        return noise_imgspace
+    elif output_space == 'complex_image':
+        if np.iscomplexobj(data):
+            return data.astype(np.complex64)
 
-    return noise_imgspace
 
 def replicate_noise_map_with_sampling(noise_imgspace, target_H, target_W, target_slices):
     """

@@ -21,35 +21,36 @@ def process_kspace_to_img(kspace_2d):
     img_mag = np.abs(img_complex).astype(np.float32)
     return img_mag
 
+def process_kspace_to_img_complex(kspace_2d):
+    """
+    Process a 2D k-space slice into a COMPLEX image:
+      - ifftshift, 2D IFFT, fftshift
+    Returns a complex64 image (no magnitude taken).
+    """
+    shifted = np.fft.ifftshift(kspace_2d)
+    img_complex = np.fft.ifft2(shifted)
+    img_complex = np.fft.fftshift(img_complex)
+    return img_complex.astype(np.complex64)
+
 
 def load_mri_data(
     file_path,
     key='image',
     data_format='b1000',
     num_samples_to_load=None,
-    gslider_index=0
+    gslider_index=0,
+    output_space='magnitude'  # NEW: 'magnitude' (default) or 'complex_image'
 ):
     """
-    Load MRI k-space or related data and convert to magnitude images.
+    Load MRI k-space or related data and convert to images.
 
     Parameters
     ----------
-    file_path : str
-        Path to the .mat or HDF5 file.
-    key : str
-        Dataset key inside the file.
-    data_format : {'Hwihun_phantom','b1000','C','gslider'}
-        Format of stored data. For 'gslider', expects 6D array
-        (dwi, gslider, slice, coil, y, x).
-    num_samples_to_load : int or None
-        If set, limit number of DWI channels.
-    gslider_index : int
-        Which gSlider encoding to select when data_format='gslider'.
-
-    Returns
-    -------
-    mri_img : np.ndarray
-        Array of shape (H, W, coils, slices, samples) with float32 magnitudes.
+    ...
+    output_space : {'magnitude', 'complex_image'}
+        'magnitude' (default): return float32 magnitudes as before.
+        'complex_image'      : return complex64 image-domain data (real+imag),
+                               no magnitude taken.
     """
     if data_format == 'simulate':
         import nibabel as nib
@@ -115,12 +116,18 @@ def load_mri_data(
     elif data_format == 'gslider_2':
         if raw_data.ndim != 5:
             raise ValueError(f"Expected 5D gslider data, got {raw_data.shape}")
+        print("RAW Gslider shape: ", raw_data.shape)
         num_coil, n_dwi, num_slices, H, W = raw_data.shape
-        if num_samples_to_load is not None:
-            sel = raw_data[:, :num_samples_to_load, ...]
-        data = np.transpose(sel, (3, 4, 0, 2, 1)) /29.0 # (H, W, coils, slices, dwi)  # (H, W, coils, slices, dwi)
+        sel = raw_data[:, :num_samples_to_load, ...] if num_samples_to_load is not None else raw_data
+        data = np.transpose(sel, (3, 4, 0, 2, 1))  # (H, W, coils, slices, dwi)
         print("Final loaded gslider_2 shape: ", data.shape)
-        return np.abs(data).astype(np.float32)
+
+        if output_space == 'magnitude':
+            return np.abs(data).astype(np.float32)
+        else:  # 'complex_image'
+            if np.iscomplexobj(data):
+                print("get complex mri input")
+                return data.astype(np.complex64)
     else:
         raise ValueError(f"Unrecognized data_format: {data_format}")
 
@@ -130,10 +137,17 @@ def load_mri_data(
     H, W, num_coils, mri_slices, num_samples = data.shape
 
     # 4) Process each 2D k-space with IFFT to magnitude
-    mri_img = np.empty((H, W, num_coils, mri_slices, num_samples), dtype=np.float32)
-    for c in range(num_coils):
-        for s in range(mri_slices):
-            for n in range(num_samples):
-                mri_img[:, :, c, s, n] = process_kspace_to_img(data[:, :, c, s, n])
-
-    return mri_img
+    if output_space == 'magnitude':
+        mri_img = np.empty((H, W, num_coils, mri_slices, num_samples), dtype=np.float32)
+        for c in range(num_coils):
+            for s in range(mri_slices):
+                for n in range(num_samples):
+                    mri_img[:, :, c, s, n] = process_kspace_to_img(data[:, :, c, s, n])
+        return mri_img
+    else:  # 'complex_image'
+        mri_img = np.empty((H, W, num_coils, mri_slices, num_samples), dtype=np.complex64)
+        for c in range(num_coils):
+            for s in range(mri_slices):
+                for n in range(num_samples):
+                    mri_img[:, :, c, s, n] = process_kspace_to_img_complex(data[:, :, c, s, n])
+        return mri_img

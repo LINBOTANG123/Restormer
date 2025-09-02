@@ -29,9 +29,9 @@ def ifft2c(kspace: np.ndarray) -> np.ndarray:
     Centered 2D inverse FFT with orthonormal scaling over last two axes.
     kspace: (..., H, W) complex -> complex image with same leading dims.
     """
-    x = np.fft.ifftshift(kspace, axes=(-2, -1))
-    x = np.fft.ifft2(x, axes=(-2, -1), norm='ortho')
-    x = np.fft.fftshift(x, axes=(-2, -1))
+    x = np.fft.ifftshift(kspace)
+    x = np.fft.ifft2(x)
+    x = np.fft.fftshift(x)
     return x
 
 
