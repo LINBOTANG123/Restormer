@@ -13,6 +13,172 @@ import matplotlib.pyplot as plt
 
 NUM_COILS = 32  # adjust if needed
 
+def report_noise_stats(noise_cplx_scaled: np.ndarray, brain_mask: np.ndarray = None):
+    """
+    Compute and print global noise statistics in scaled domain.
+    noise_cplx_scaled: (H,W,C,S_noise) complex
+    brain_mask: optional (H,W,S) bool (will be broadcast across coils)
+    """
+    H, W, C, S_noise = noise_cplx_scaled.shape
+
+    real_vals = noise_cplx_scaled.real
+    imag_vals = noise_cplx_scaled.imag
+
+    if brain_mask is not None:
+        # Expand brain_mask to (H,W,S_noise), then broadcast across coils
+        mask3d = np.broadcast_to(brain_mask[..., None], (H, W, brain_mask.shape[2], 1))
+        # Note: your brain_mask has S slices, but noise has S_noise samples (not same!)
+        # Safer to just ignore brain_mask for pure noise, unless you know they align.
+        print("⚠️ Warning: brain_mask shape != noise slices, ignoring mask for noise stats.")
+        mask = np.ones_like(real_vals[..., 0], dtype=bool)  # fallback
+    else:
+        mask = np.ones_like(real_vals[..., 0], dtype=bool)
+
+    # Flatten across all dims
+    r = real_vals[mask, :].ravel()
+    i = imag_vals[mask, :].ravel()
+
+    print("\n=== [Noise stats in scaled domain] ===")
+    print(f" REAL mean={r.mean():.3e}, std={r.std(ddof=1):.3e}")
+    print(f" IMAG mean={i.mean():.3e}, std={i.std(ddof=1):.3e}")
+
+
+
+def report_percoil_noise_stats(noise_cplx_scaled: np.ndarray, brain_mask: np.ndarray = None):
+    """
+    Compute per-coil noise statistics (mean, std) of real/imag parts
+    in the scaled domain (after applying S_GLOBAL).
+    
+    noise_cplx_scaled: (H,W,C,S_noise) complex ndarray
+    brain_mask: optional (H,W,S) boolean mask. If provided, stats are only taken
+                from those spatial locations (background or brain).
+    """
+    H, W, C, S_noise = noise_cplx_scaled.shape
+    mu_r, mu_i, std_r, std_i = [], [], [], []
+
+    for c in range(C):
+        real_vals = noise_cplx_scaled.real[:, :, c, :].ravel()
+        imag_vals = noise_cplx_scaled.imag[:, :, c, :].ravel()
+
+        # If you want to mask: only apply spatial mask, ignore slice mismatch
+        if brain_mask is not None:
+            H, W, S = brain_mask.shape
+            mask2d = brain_mask.reshape(H*W*S)
+            real_vals = real_vals[:mask2d.size][mask2d]
+            imag_vals = imag_vals[:mask2d.size][mask2d]
+
+        mu_r.append(real_vals.mean())
+        mu_i.append(imag_vals.mean())
+        std_r.append(real_vals.std(ddof=1))
+        std_i.append(imag_vals.std(ddof=1))
+
+    mu_r, mu_i, std_r, std_i = map(np.array, (mu_r, mu_i, std_r, std_i))
+
+    print("\n=== [Per-coil noise stats in scaled domain] ===")
+    print("Coil | μ_real | σ_real | μ_imag | σ_imag")
+    for c in range(C):
+        print(f"{c:3d} | {mu_r[c]: .3e} | {std_r[c]: .3e} | {mu_i[c]: .3e} | {std_i[c]: .3e}")
+
+    print("\nSummary:")
+    print(f" Mean σ_real={std_r.mean():.3e}, Mean σ_imag={std_i.mean():.3e}")
+    print(f" Median σ_real={np.median(std_r):.3e}, Median σ_imag={np.median(std_i):.3e}")
+
+    return std_r, std_i
+
+def _trimmed_mean_std(vals: np.ndarray, trim_pct: float = 1.0):
+    """
+    Robust mean/std by trimming both tails by `trim_pct` percent.
+    vals: 1D array
+    """
+    vals = np.asarray(vals)
+    vals = vals[np.isfinite(vals)]
+    if vals.size == 0:
+        return 0.0, 0.0
+    lo, hi = np.percentile(vals, [trim_pct, 100.0 - trim_pct])
+    core = vals[(vals >= lo) & (vals <= hi)]
+    if core.size == 0:
+        core = vals
+    return float(core.mean()), float(core.std(ddof=1) if core.size > 1 else core.std())
+
+def compute_mri_foreground_stats_scaled(mri_cplx_scaled: np.ndarray,
+                                        brain_mask: np.ndarray,
+                                        trim_pct: float = 1.0):
+    """
+    Compute foreground stats in the SAME scaled domain you feed the network.
+    mri_cplx_scaled: (H,W,C,S,N) complex
+    brain_mask:     (H,W,S) bool
+    Returns:
+      per_coil: dict with arrays mu_R[C], sig_R[C], mu_I[C], sig_I[C]
+      rss_mag:  dict with mu_mag, sig_mag (pooled over coils)
+      summary:  dict of medians and 5–95% ranges for the complex channels
+    """
+    H, W, C, S, N = mri_cplx_scaled.shape
+    # Mask to (H,W,S,N) then used for each coil slice-set
+    mask4d = np.broadcast_to(brain_mask[:, :, :, None], (H, W, S, N))
+
+    mu_R, sig_R, mu_I, sig_I = [], [], [], []
+
+    # Per-coil complex stats (aggregate over all slices & volumes within brain)
+    for c in range(C):
+        r = mri_cplx_scaled.real[:, :, c, :, :][mask4d]
+        i = mri_cplx_scaled.imag[:, :, c, :, :][mask4d]
+        mu_r, sd_r = _trimmed_mean_std(r, trim_pct)
+        mu_i, sd_i = _trimmed_mean_std(i, trim_pct)
+        mu_R.append(mu_r); sig_R.append(sd_r)
+        mu_I.append(mu_i); sig_I.append(sd_i)
+
+    mu_R = np.array(mu_R); sig_R = np.array(sig_R)
+    mu_I = np.array(mu_I); sig_I = np.array(sig_I)
+
+    # RSS magnitude stats (pooled)
+    mag_cc = np.sqrt((np.abs(mri_cplx_scaled) ** 2).sum(axis=2))  # (H,W,S,N)
+    mag_vals = mag_cc[mask4d]
+    mu_mag, sig_mag = _trimmed_mean_std(mag_vals, trim_pct)
+
+    # Summaries (medians + 5–95% ranges) across coils
+    def _rng(a):
+        return float(np.percentile(a, 5)), float(np.percentile(a, 95))
+    summary = {
+        "mu_R_median":  float(np.median(mu_R)),
+        "mu_I_median":  float(np.median(mu_I)),
+        "sig_R_median": float(np.median(sig_R)),
+        "sig_I_median": float(np.median(sig_I)),
+        "mu_R_p5": _rng(mu_R)[0],  "mu_R_p95": _rng(mu_R)[1],
+        "mu_I_p5": _rng(mu_I)[0],  "mu_I_p95": _rng(mu_I)[1],
+        "sig_R_p5": _rng(sig_R)[0],"sig_R_p95": _rng(sig_R)[1],
+        "sig_I_p5": _rng(sig_I)[0],"sig_I_p95": _rng(sig_I)[1],
+        "mu_mag": mu_mag, "sig_mag": sig_mag
+    }
+
+    per_coil = {"mu_R": mu_R, "sig_R": sig_R, "mu_I": mu_I, "sig_I": sig_I}
+    rss_mag  = {"mu_mag": mu_mag, "sig_mag": sig_mag}
+    return per_coil, rss_mag, summary
+
+def save_mri_foreground_stats(out_dir: str, per_coil: dict, rss_mag: dict, summary: dict):
+    """Save per-coil CSV + summary CSV for training use."""
+    os.makedirs(out_dir, exist_ok=True)
+    # Per-coil CSV
+    coils = np.arange(len(per_coil["mu_R"]))
+    data = np.stack([coils,
+                     per_coil["mu_R"], per_coil["sig_R"],
+                     per_coil["mu_I"], per_coil["sig_I"]], axis=1)
+    header = "coil,mu_R,sig_R,mu_I,sig_I"
+    np.savetxt(os.path.join(out_dir, "foreground_percoil_complex_stats.csv"),
+               data, delimiter=",", header=header, comments="", fmt="%.6e")
+    # RSS magnitude CSV (single row)
+    with open(os.path.join(out_dir, "foreground_rss_magnitude_stats.csv"), "w") as f:
+        f.write("mu_mag,sig_mag\n")
+        f.write(f"{rss_mag['mu_mag']:.6e},{rss_mag['sig_mag']:.6e}\n")
+    # Summary CSV
+    keys = ["mu_R_median","mu_I_median","sig_R_median","sig_I_median",
+            "mu_R_p5","mu_R_p95","mu_I_p5","mu_I_p95",
+            "sig_R_p5","sig_R_p95","sig_I_p5","sig_I_p95",
+            "mu_mag","sig_mag"]
+    with open(os.path.join(out_dir, "foreground_summary.csv"), "w") as f:
+        f.write(",".join(keys) + "\n")
+        f.write(",".join([f"{summary[k]:.6e}" for k in keys]) + "\n")
+
+
 def save_residual_hist_and_stats(
     vol_cplx: np.ndarray,      # (H,W,C,S) complex noisy/original (current sample)
     deno_real: np.ndarray,     # (H,W,C,S) float32
@@ -22,8 +188,8 @@ def save_residual_hist_and_stats(
     sample_idx: int,
     noise_cplx: np.ndarray = None,  # (H,W,C,S_noise) complex, optional
     bins: int = 100,
-    coils_to_plot: list = None,     # optional explicit list of coil indices to plot
-    slices_to_plot: list = None     # optional explicit list of slice indices to plot
+    coils_to_plot: list = None,
+    slices_to_plot: list = None
 ):
     import os
     import numpy as np
@@ -31,152 +197,140 @@ def save_residual_hist_and_stats(
 
     os.makedirs(out_dir, exist_ok=True)
 
-    # ---- Validate shapes ----
     H, W, C, S = vol_cplx.shape
-    assert deno_real.shape == (H, W, C, S), f"deno_real shape {deno_real.shape} != {(H,W,C,S)}"
-    assert deno_imag.shape == (H, W, C, S), f"deno_imag shape {deno_imag.shape} != {(H,W,C,S)}"
-    assert brain_mask.shape == (H, W, S),   f"brain_mask shape {brain_mask.shape} != {(H,W,S)}"
-    if noise_cplx is not None:
-        assert noise_cplx.shape[:3] == (H, W, C), \
-            f"noise_cplx spatial/coil shape {noise_cplx.shape[:3]} != {(H,W,C)}"
-
-    # ---- Residuals (brain-masked), pooled across slices ----
-    res_r = np.real(vol_cplx) - deno_real   # (H,W,C,S)
-    res_i = np.imag(vol_cplx) - deno_imag   # (H,W,C,S)
-
-    # Per-coil mean/std over all masked voxels across slices
-    res_r_stats = np.zeros((C, 2), dtype=np.float64)  # mean, std
-    res_i_stats = np.zeros((C, 2), dtype=np.float64)
-
     mask_flat = brain_mask.reshape(-1)
-    for c in range(C):
-        r_flat = res_r[:, :, c, :].reshape(-1)
-        i_flat = res_i[:, :, c, :].reshape(-1)
-        r_m = r_flat[mask_flat]
-        i_m = i_flat[mask_flat]
 
-        res_r_stats[c, 0] = r_m.mean() if r_m.size else 0.0
-        res_r_stats[c, 1] = (r_m.std(ddof=1) if r_m.size > 1 else (r_m.std() if r_m.size else 0.0))
-        res_i_stats[c, 0] = i_m.mean() if i_m.size else 0.0
-        res_i_stats[c, 1] = (i_m.std(ddof=1) if i_m.size > 1 else (i_m.std() if i_m.size else 0.0))
+    # ---- Residuals ----
+    res_r = np.real(vol_cplx) - deno_real
+    res_i = np.imag(vol_cplx) - deno_imag
 
-    # Save residual stats CSV (per coil)
-    csv_res_path = os.path.join(out_dir, f"residual_stats_sample{sample_idx+1}.csv")
-    with open(csv_res_path, "w") as f:
-        f.write("coil,mu_real,std_real,mu_imag,std_imag\n")
-        for c in range(C):
-            f.write(f"{c},{res_r_stats[c,0]:.6e},{res_r_stats[c,1]:.6e},"
-                    f"{res_i_stats[c,0]:.6e},{res_i_stats[c,1]:.6e}\n")
-    print(f"[save_residual_hist_and_stats] Saved residual mean/std CSV → {csv_res_path}")
-
-    # ---- Determine which coils/slices to plot ----
+    # Default coils/slices
     if coils_to_plot is None:
         coils_to_plot = sorted(set([0, C//2, C-1])) if C >= 3 else list(range(C))
-    else:
-        coils_to_plot = [c for c in coils_to_plot if 0 <= c < C]
-
     if slices_to_plot is None:
         if S >= 3:
-            slices_to_plot = sorted(set([max(0, S//2 - 1), S//2, min(S-1, S//2 + 1)]))
+            slices_to_plot = [max(0, S//2-1), S//2, min(S-1, S//2+1)]
         else:
             slices_to_plot = list(range(S))
-    else:
-        slices_to_plot = [z for z in slices_to_plot if 0 <= z < S]
 
-    # ---- For per-(coil, slice) masked pure-noise stats (only for plotted slices) ----
-    rows_noise_masked = []
-
-    # ---- Plot histograms for selected coils & slices ----
+    # ---- Loop over slices/coils ----
     for z in slices_to_plot:
         m = brain_mask[:, :, z].reshape(-1)
+
         for c in coils_to_plot:
-            # Residual vectors inside brain
             r = res_r[:, :, c, z].reshape(-1)[m]
             i = res_i[:, :, c, z].reshape(-1)[m]
+            noisy_r = np.real(vol_cplx[:, :, c, z]).reshape(-1)[m]
+            noisy_i = np.imag(vol_cplx[:, :, c, z]).reshape(-1)[m]
 
-            # --- Residual REAL-only histogram ---
-            if r.size:
-                plt.figure()
-                plt.hist(r, bins=bins, density=True)
-                plt.title(f"Residual REAL | sample {sample_idx+1} | coil {c} | slice {z}")
-                plt.xlabel("Residual value"); plt.ylabel("Density")
-                out_png = os.path.join(out_dir, f"hist_residual_real_s{sample_idx+1}_c{c:02d}_z{z:03d}.png")
-                plt.tight_layout(); plt.savefig(out_png, dpi=150); plt.close()
-
-            # --- Residual IMAG-only histogram ---
-            if i.size:
-                plt.figure()
-                plt.hist(i, bins=bins, density=True)
-                plt.title(f"Residual IMAG | sample {sample_idx+1} | coil {c} | slice {z}")
-                plt.xlabel("Residual value"); plt.ylabel("Density")
-                out_png = os.path.join(out_dir, f"hist_residual_imag_s{sample_idx+1}_c{c:02d}_z{z:03d}.png")
-                plt.tight_layout(); plt.savefig(out_png, dpi=150); plt.close()
-
-            # --- Overlay vs SAME coil/slice pure noise (masked to the SAME ROI) ---
-            if noise_cplx is not None and (r.size or i.size):
+            if noise_cplx is not None:
                 S_noise = noise_cplx.shape[-1]
-
-                # shape: (H*W, S_noise), then mask rows; combine samples
                 nr = noise_cplx.real[:, :, c, :].reshape(-1, S_noise)
                 ni = noise_cplx.imag[:, :, c, :].reshape(-1, S_noise)
-                nr_m = nr[m, :].ravel() if nr.size else np.array([])
-                ni_m = ni[m, :].ravel() if ni.size else np.array([])
+                nr_m = nr[m, :].ravel()
+                ni_m = ni[m, :].ravel()
+            else:
+                nr_m, ni_m = np.array([]), np.array([])
 
-                # REAL overlay
-                if r.size and nr_m.size:
-                    # robust shared range (0.1%–99.9% combined)
-                    lo = np.quantile(np.concatenate([r, nr_m]), 0.001)
-                    hi = np.quantile(np.concatenate([r, nr_m]), 0.999)
-                    edges = np.linspace(lo, hi, bins + 1)
-                else:
-                    edges = bins
+            # --- Per-coil noisy vs noise ---
+            if noisy_r.size or nr_m.size:
+                edges = np.linspace(
+                    np.quantile(np.concatenate([noisy_r, nr_m]), 0.001),
+                    np.quantile(np.concatenate([noisy_r, nr_m]), 0.999),
+                    bins+1
+                ) if (noisy_r.size and nr_m.size) else bins
+                plt.figure()
+                if noisy_r.size: plt.hist(noisy_r, bins=edges, density=True, alpha=0.6, label="Noisy MRI (brain)")
+                if nr_m.size:    plt.hist(nr_m,    bins=edges, density=True, alpha=0.6, label="Pure noise (brain)")
+                plt.title(f"REAL noisy vs noise | sample {sample_idx+1} | coil {c} | slice {z}")
+                plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+                plt.savefig(os.path.join(out_dir, f"hist_noisy_vs_noise_real_s{sample_idx+1}_c{c:02d}_z{z:03d}.png"), dpi=150)
+                plt.close()
 
-                if r.size or nr_m.size:
-                    plt.figure()
-                    if r.size:
-                        plt.hist(r,    bins=edges, density=True, alpha=0.6, label='Residual (brain)')
-                    if nr_m.size:
-                        plt.hist(nr_m, bins=edges, density=True, alpha=0.6, label='Pure noise (brain mask)')
-                    plt.title(f"REAL compare | sample {sample_idx+1} | coil {c} | slice {z}")
-                    plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
-                    out_png = os.path.join(out_dir, f"hist_compare_real_s{sample_idx+1}_c{c:02d}_z{z:03d}.png")
-                    plt.tight_layout(); plt.savefig(out_png, dpi=150); plt.close()
+            if noisy_i.size or ni_m.size:
+                edges = np.linspace(
+                    np.quantile(np.concatenate([noisy_i, ni_m]), 0.001),
+                    np.quantile(np.concatenate([noisy_i, ni_m]), 0.999),
+                    bins+1
+                ) if (noisy_i.size and ni_m.size) else bins
+                plt.figure()
+                if noisy_i.size: plt.hist(noisy_i, bins=edges, density=True, alpha=0.6, label="Noisy MRI (brain)")
+                if ni_m.size:    plt.hist(ni_m,    bins=edges, density=True, alpha=0.6, label="Pure noise (brain)")
+                plt.title(f"IMAG noisy vs noise | sample {sample_idx+1} | coil {c} | slice {z}")
+                plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+                plt.savefig(os.path.join(out_dir, f"hist_noisy_vs_noise_imag_s{sample_idx+1}_c{c:02d}_z{z:03d}.png"), dpi=150)
+                plt.close()
 
-                # IMAG overlay
-                if i.size and ni_m.size:
-                    lo = np.quantile(np.concatenate([i, ni_m]), 0.001)
-                    hi = np.quantile(np.concatenate([i, ni_m]), 0.999)
-                    edges = np.linspace(lo, hi, bins + 1)
-                else:
-                    edges = bins
+            # --- Per-coil residual vs noise ---
+            if r.size or nr_m.size:
+                edges = np.linspace(
+                    np.quantile(np.concatenate([r, nr_m]), 0.001),
+                    np.quantile(np.concatenate([r, nr_m]), 0.999),
+                    bins+1
+                ) if (r.size and nr_m.size) else bins
+                plt.figure()
+                if r.size:    plt.hist(r,    bins=edges, density=True, alpha=0.6, label="Residual (brain)")
+                if nr_m.size: plt.hist(nr_m, bins=edges, density=True, alpha=0.6, label="Pure noise (brain)")
+                plt.title(f"REAL residual vs noise | sample {sample_idx+1} | coil {c} | slice {z}")
+                plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+                plt.savefig(os.path.join(out_dir, f"hist_residual_vs_noise_real_s{sample_idx+1}_c{c:02d}_z{z:03d}.png"), dpi=150)
+                plt.close()
 
-                if i.size or ni_m.size:
-                    plt.figure()
-                    if i.size:
-                        plt.hist(i,    bins=edges, density=True, alpha=0.6, label='Residual (brain)')
-                    if ni_m.size:
-                        plt.hist(ni_m, bins=edges, density=True, alpha=0.6, label='Pure noise (brain mask)')
-                    plt.title(f"IMAG compare | sample {sample_idx+1} | coil {c} | slice {z}")
-                    plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
-                    out_png = os.path.join(out_dir, f"hist_compare_imag_s{sample_idx+1}_c{c:02d}_z{z:03d}.png")
-                    plt.tight_layout(); plt.savefig(out_png, dpi=150); plt.close()
+            if i.size or ni_m.size:
+                edges = np.linspace(
+                    np.quantile(np.concatenate([i, ni_m]), 0.001),
+                    np.quantile(np.concatenate([i, ni_m]), 0.999),
+                    bins+1
+                ) if (i.size and ni_m.size) else bins
+                plt.figure()
+                if i.size:    plt.hist(i,    bins=edges, density=True, alpha=0.6, label="Residual (brain)")
+                if ni_m.size: plt.hist(ni_m, bins=edges, density=True, alpha=0.6, label="Pure noise (brain)")
+                plt.title(f"IMAG residual vs noise | sample {sample_idx+1} | coil {c} | slice {z}")
+                plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+                plt.savefig(os.path.join(out_dir, f"hist_residual_vs_noise_imag_s{sample_idx+1}_c{c:02d}_z{z:03d}.png"), dpi=150)
+                plt.close()
 
-                # Record masked pure-noise stats for this (coil, slice)
-                if nr_m.size or ni_m.size:
-                    mu_nr = nr_m.mean() if nr_m.size else 0.0
-                    sd_nr = (nr_m.std(ddof=1) if nr_m.size > 1 else (nr_m.std() if nr_m.size else 0.0))
-                    mu_ni = ni_m.mean() if ni_m.size else 0.0
-                    sd_ni = (ni_m.std(ddof=1) if ni_m.size > 1 else (ni_m.std() if ni_m.size else 0.0))
-                    rows_noise_masked.append((c, z, mu_nr, sd_nr, mu_ni, sd_ni))
+        # ---------- Coil-combined overlays ----------
+        noisy_cc_slice = np.sqrt((np.abs(vol_cplx[:, :, :, z])**2).sum(axis=2))
+        deno_cc_slice  = np.sqrt((deno_real[:, :, :, z]**2 + deno_imag[:, :, :, z]**2).sum(axis=2))
+        residual_cc    = noisy_cc_slice - deno_cc_slice
 
-    # ---- Write per-(coil, slice) masked pure-noise stats for plotted slices ----
-    if noise_cplx is not None and rows_noise_masked:
-        csv_noise_masked = os.path.join(out_dir, f"pure_noise_stats_masked_slices_sample{sample_idx+1}.csv")
-        with open(csv_noise_masked, "w") as f:
-            f.write("coil,slice,mu_real,std_real,mu_imag,std_imag\n")
-            for (c, z, mu_nr, sd_nr, mu_ni, sd_ni) in rows_noise_masked:
-                f.write(f"{c},{z},{mu_nr:.6e},{sd_nr:.6e},{mu_ni:.6e},{sd_ni:.6e}\n")
-        print(f"[save_residual_hist_and_stats] Saved masked pure-noise stats CSV → {csv_noise_masked}")
+        if noise_cplx is not None:
+            noise_cc_all  = np.sqrt((np.abs(noise_cplx)**2).sum(axis=2))  # (H,W,S_noise)
+            noise_cc_pool = noise_cc_all.reshape(H*W, -1)[brain_mask[:, :, z].reshape(-1), :].ravel()
+        else:
+            noise_cc_pool = np.array([])
+
+        # Residual vs noise (coil-combined)
+        if residual_cc.size or noise_cc_pool.size:
+            edges = np.linspace(
+                np.quantile(np.concatenate([residual_cc[brain_mask[:,:,z]], noise_cc_pool]), 0.001),
+                np.quantile(np.concatenate([residual_cc[brain_mask[:,:,z]], noise_cc_pool]), 0.999),
+                bins+1
+            ) if (residual_cc.size and noise_cc_pool.size) else bins
+            plt.figure()
+            if residual_cc.size: plt.hist(residual_cc[brain_mask[:,:,z]], bins=edges, density=True, alpha=0.6, label="Residual (RSS)")
+            if noise_cc_pool.size: plt.hist(noise_cc_pool, bins=edges, density=True, alpha=0.6, label="Pure noise (RSS)")
+            plt.title(f"Coil-combined residual vs noise | sample {sample_idx+1} | slice {z}")
+            plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+            plt.savefig(os.path.join(out_dir, f"hist_cc_residual_vs_noise_s{sample_idx+1}_z{z:03d}.png"), dpi=150)
+            plt.close()
+
+        # Noisy vs noise (coil-combined) 🔥 NEW
+        if noisy_cc_slice.size or noise_cc_pool.size:
+            edges = np.linspace(
+                np.quantile(np.concatenate([noisy_cc_slice[brain_mask[:,:,z]], noise_cc_pool]), 0.001),
+                np.quantile(np.concatenate([noisy_cc_slice[brain_mask[:,:,z]], noise_cc_pool]), 0.999),
+                bins+1
+            ) if (noisy_cc_slice.size and noise_cc_pool.size) else bins
+            plt.figure()
+            if noisy_cc_slice.size: plt.hist(noisy_cc_slice[brain_mask[:,:,z]], bins=edges, density=True, alpha=0.6, label="Noisy MRI (RSS)")
+            if noise_cc_pool.size:  plt.hist(noise_cc_pool, bins=edges, density=True, alpha=0.6, label="Pure noise (RSS)")
+            plt.title(f"Coil-combined noisy vs noise | sample {sample_idx+1} | slice {z}")
+            plt.xlabel("Value"); plt.ylabel("Density"); plt.legend()
+            plt.savefig(os.path.join(out_dir, f"hist_cc_noisy_vs_noise_s{sample_idx+1}_z{z:03d}.png"), dpi=150)
+            plt.close()
+
 
 
 def check_complex_residual_zero_mean(
@@ -392,6 +546,24 @@ def main():
     p_cap  = np.percentile(mag_cc, 99.8)
     S_GLOBAL = 0.99 / (p_cap + 1e-12)
     print(f"[scale] Using S_GLOBAL={S_GLOBAL:.3e} from RSS|mag| 99.8%")
+    
+
+    # --- MRI input basic stats (over all voxels) ---
+    mri_real = mri_img.real
+    mri_imag = mri_img.imag
+    mri_mag  = np.abs(mri_img)                               # (H,W,C,S,N)
+    mri_cc   = np.sqrt((np.abs(mri_img)**2).sum(axis=2))     # RSS coil-combined → (H,W,S,N)
+
+    def _pr_stats(tag, arr):
+        arr = arr.astype(np.float32)
+        print(f"[{tag}] min={arr.min():.6g}  max={arr.max():.6g}  "
+            f"mean={arr.mean():.6g}  std={arr.std(ddof=1):.6g}")
+
+    _pr_stats("MRI real",        mri_real)
+    _pr_stats("MRI imag",        mri_imag)
+    _pr_stats("MRI |complex|",   mri_mag)
+    _pr_stats("MRI RSS (over C)", mri_cc)
+
 
     # --- 1.2) Load brain mask ---
     mask_img = nib.load(args.brain_mask)
@@ -399,6 +571,27 @@ def main():
     if brain_mask.shape != (H, W, S):
         raise ValueError(f"Brain mask shape {brain_mask.shape} != {(H,W,S)}")
     bg_mask = ~brain_mask  # background is where mask==0
+
+    # --- Foreground stats (scaled domain) for rescaling naturals -------------------
+    # Work on scaled MRI so stats match the network's units
+    mri_scaled = mri_img * S_GLOBAL  # (H,W,C,S,N) complex
+    per_coil_fg, rss_mag_fg, fg_summary = compute_mri_foreground_stats_scaled(
+        mri_scaled, brain_mask=brain_mask, trim_pct=1.0  # 1% trim on each tail
+    )
+
+    # Quick printout
+    print("\n=== [MRI foreground stats in scaled domain] ===")
+    print(f" RSS magnitude: mu={rss_mag_fg['mu_mag']:.3e}, sigma={rss_mag_fg['sig_mag']:.3e}")
+    print(f" Complex (per coil) medians: "
+        f"mu_R={fg_summary['mu_R_median']:.3e}, mu_I={fg_summary['mu_I_median']:.3e}, "
+        f"sig_R={fg_summary['sig_R_median']:.3e}, sig_I={fg_summary['sig_I_median']:.3e}")
+    print(f" sig_R range (p5–p95): {fg_summary['sig_R_p5']:.3e}–{fg_summary['sig_R_p95']:.3e}")
+    print(f" sig_I range (p5–p95): {fg_summary['sig_I_p5']:.3e}–{fg_summary['sig_I_p95']:.3e}")
+
+    # Save CSVs for training pipeline to consume
+    save_mri_foreground_stats(args.output_folder, per_coil_fg, rss_mag_fg, fg_summary)
+    print(f"Saved MRI foreground stats to {args.output_folder}")
+
 
     # --- 2) Optionally load Noise (complex) ---
     noise_cplx = None
@@ -414,6 +607,34 @@ def main():
 
         # rotate noise map to match
         noise_cplx = np.rot90(noise_cplx, k=3, axes=(0, 1)).copy()
+
+        # --- Pure-noise basic stats (over all noise samples) ---
+        noise_cplx_scaled = noise_cplx * S_GLOBAL
+        report_noise_stats(noise_cplx_scaled, brain_mask=brain_mask)
+        sigma_r, sigma_i = report_percoil_noise_stats(noise_cplx_scaled, brain_mask=None)
+        out_csv = os.path.join(args.output_folder, "percoil_noise_stats.csv")
+        header = "coil,sigma_real,sigma_imag"
+        data = np.stack([np.arange(len(sigma_r)), sigma_r, sigma_i], axis=1)
+        np.savetxt(out_csv, data, delimiter=",", header=header, comments="", fmt="%.6e")
+        print(f"Saved per-coil noise stats → {out_csv}")
+
+
+        # --- Pure-noise basic stats (over all noise samples) ---
+        noise_real = noise_cplx.real
+        noise_imag = noise_cplx.imag
+        noise_mag  = np.abs(noise_cplx)                          # (H,W,C,S_noise)
+        noise_cc   = np.sqrt((np.abs(noise_cplx)**2).sum(axis=2))# RSS coil-combined → (H,W,S_noise)
+
+        def _pr_stats(tag, arr):
+            arr = arr.astype(np.float32)
+            print(f"[{tag}] min={arr.min():.6g}  max={arr.max():.6g}  "
+                f"mean={arr.mean():.6g}  std={arr.std(ddof=1):.6g}")
+
+        _pr_stats("NOISE real",        noise_real)
+        _pr_stats("NOISE imag",        noise_imag)
+        _pr_stats("NOISE |complex|",   noise_mag)
+        _pr_stats("NOISE RSS (over C)", noise_cc)
+
 
         ddof = 1 if noise_cplx.shape[-1] > 1 else 0
         sigma_real = noise_cplx.real.std(axis=-1, ddof=ddof).astype(np.float32)  # (H,W,C)
@@ -513,9 +734,8 @@ def main():
                     sig_i, S_GLOBAL, device, tag=f"IMAG slice{z} coil{c}"
                 )
 
-                # Blend: denoise only inside brain; keep original outside
-                deno_real[:, :, c, z] = mask2d * out_r + (1.0 - mask2d) * img_c.real.astype(np.float32)
-                deno_imag[:, :, c, z] = mask2d * out_i + (1.0 - mask2d) * img_c.imag.astype(np.float32)
+                deno_real[:, :, c, z] = mask2d * out_r
+                deno_imag[:, :, c, z] = mask2d * out_i
 
         # Per-coil magnitude after denoising
         deno_mag = np.sqrt(deno_real ** 2 + deno_imag ** 2)     # (H,W,C,S)
@@ -534,13 +754,13 @@ def main():
 
         # --- Residual histograms + residual stats CSV + pure-noise hist/stats (if available)
         save_residual_hist_and_stats(
-            vol_cplx=vol,
-            deno_real=deno_real,
-            deno_imag=deno_imag,
+            vol_cplx=vol * S_GLOBAL,
+            deno_real=deno_real * S_GLOBAL,
+            deno_imag=deno_imag * S_GLOBAL,
             brain_mask=brain_mask,
             out_dir=diag_dir,
             sample_idx=sid,
-            noise_cplx=noise_cplx  # will be None if not using noise
+            noise_cplx=noise_cplx * S_GLOBAL  # will be None if not using noise
         )
 
         # Save per-coil results

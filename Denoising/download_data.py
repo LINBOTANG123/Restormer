@@ -1,111 +1,165 @@
-## Restormer: Efficient Transformer for High-Resolution Image Restoration
-## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
-## https://arxiv.org/abs/2111.09881
-
-## Download training and testing data for Image Denoising task
-
+#!/usr/bin/env python3
+"""
+Restormer denoising data downloader (SIDD/DND + Gaussian sets) without external CLIs.
+Requires: pip install gdown
+"""
 
 import os
-# import gdown
-import shutil
-
 import argparse
+import shutil
+import zipfile
+from pathlib import Path
+
+try:
+    import gdown
+except ImportError:
+    raise SystemExit("Missing dependency: gdown. Install with `pip install gdown` in your env.")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', type=str, required=True, help='train, test or train-test')
-parser.add_argument('--dataset', type=str, default='SIDD', help='all or SIDD or DND')
+parser.add_argument('--dataset', type=str, default='SIDD', help='all or SIDD or DND (for --data test, --noise real)')
 parser.add_argument('--noise', type=str, required=True, help='real or gaussian')
 args = parser.parse_args()
 
-### Google drive IDs ######
-SIDD_train = '1UHjWZzLPGweA9ZczmV8lFSRcIxqiOVJw'      ## https://drive.google.com/file/d/1UHjWZzLPGweA9ZczmV8lFSRcIxqiOVJw/view?usp=sharing
-SIDD_val   = '1Fw6Ey1R-nCHN9WEpxv0MnMqxij-ECQYJ'      ## https://drive.google.com/file/d/1Fw6Ey1R-nCHN9WEpxv0MnMqxij-ECQYJ/view?usp=sharing
-SIDD_test  = '11vfqV-lqousZTuAit1Qkqghiv_taY0KZ'      ## https://drive.google.com/file/d/11vfqV-lqousZTuAit1Qkqghiv_taY0KZ/view?usp=sharing
-DND_test   = '1CYCDhaVxYYcXhSfEVDUwkvJDtGxeQ10G'      ## https://drive.google.com/file/d/1CYCDhaVxYYcXhSfEVDUwkvJDtGxeQ10G/view?usp=sharing
+# -------- Google Drive file IDs --------
+SIDD_train = '1UHjWZzLPGweA9ZczmV8lFSRcIxqiOVJw'
+SIDD_val   = '1Fw6Ey1R-nCHN9WEpxv0MnMqxij-ECQYJ'
+SIDD_test  = '11vfqV-lqousZTuAit1Qkqghiv_taY0KZ'
+DND_test   = '1CYCDhaVxYYcXhSfEVDUwkvJDtGxeQ10G'
 
-BSD400    = '1idKFDkAHJGAFDn1OyXZxsTbOSBx9GS8N'       ## https://drive.google.com/file/d/1idKFDkAHJGAFDn1OyXZxsTbOSBx9GS8N/view?usp=sharing
-DIV2K     = '13wLWWXvFkuYYVZMMAYiMVdSA7iVEf2fM'       ## https://drive.google.com/file/d/13wLWWXvFkuYYVZMMAYiMVdSA7iVEf2fM/view?usp=sharing
-Flickr2K  = '1J8xjFCrVzeYccD-LF08H7HiIsmi8l2Wn'       ## https://drive.google.com/file/d/1J8xjFCrVzeYccD-LF08H7HiIsmi8l2Wn/view?usp=sharing
-WaterlooED = '19_mCE_GXfmE5yYsm-HEzuZQqmwMjPpJr'      ## https://drive.google.com/file/d/19_mCE_GXfmE5yYsm-HEzuZQqmwMjPpJr/view?usp=sharing
-gaussian_test = '1mwMLt-niNqcQpfN_ZduG9j4k6P_ZkOl0'   ## https://drive.google.com/file/d/1mwMLt-niNqcQpfN_ZduG9j4k6P_ZkOl0/view?usp=sharing
+BSD400     = '1idKFDkAHJGAFDn1OyXZxsTbOSBx9GS8N'
+DIV2K      = '13wLWWXvFkuYYVZMMAYiMVdSA7iVEf2fM'
+Flickr2K   = '1J8xjFCrVzeYccD-LF08H7HiIsmi8l2Wn'
+WaterlooED = '19_mCE_GXfmE5yYsm-HEzuZQqmwMjPpJr'
+gaussian_test = '1mwMLt-niNqcQpfN_ZduG9j4k6P_ZkOl0'
 
+def ensure_dir(p: Path):
+    p.mkdir(parents=True, exist_ok=True)
 
-noise = args.noise
+def download(id_str: str, out_path: Path):
+    """Download a file by Google Drive ID to out_path using gdown; returns out_path."""
+    print(f"Downloading to {out_path} (id={id_str}) ...")
+    ensure_dir(out_path.parent)
+    # gdown returns the output path or None
+    res = gdown.download(id=id_str, output=str(out_path), quiet=False)
+    if res is None or not out_path.exists() or out_path.stat().st_size == 0:
+        raise RuntimeError(f"Download failed or empty file: {out_path}")
+    return out_path
 
-for data in args.data.split('-'):
-    if noise == 'real':
-        if data == 'train':
-            print('SIDD Training Data!')
-            os.makedirs(os.path.join('Datasets', 'Downloads'), exist_ok=True)
-            # gdown.download(id=SIDD_train, output='Datasets/Downloads/train.zip', quiet=False)
-            os.system(f'gdrive download {SIDD_train} --path Datasets/Downloads/')
-            print('Extracting SIDD Data...')
-            shutil.unpack_archive('Datasets/Downloads/train.zip', 'Datasets/Downloads')
-            os.rename(os.path.join('Datasets', 'Downloads', 'train'), os.path.join('Datasets', 'Downloads', 'SIDD'))
-            os.remove('Datasets/Downloads/train.zip')
+def extract_zip(zip_path: Path, extract_dir: Path):
+    """Extract zip_path into extract_dir after validation."""
+    if not zipfile.is_zipfile(zip_path):
+        # Sometimes Drive returns an HTML file for quota/auth issues
+        head = zip_path.read_bytes()[:200].decode(errors="ignore")
+        raise RuntimeError(f"{zip_path} is not a valid zip. First bytes: {head[:120]!r}")
+    print(f"Extracting {zip_path} -> {extract_dir}")
+    ensure_dir(extract_dir)
+    with zipfile.ZipFile(zip_path, 'r') as zf:
+        zf.extractall(str(extract_dir))
 
-            print('SIDD Validation Data!')
-            # gdown.download(id=SIDD_val, output='Datasets/val.zip', quiet=False)
-            os.system(f'gdrive download {SIDD_val} --path Datasets/')
-            print('Extracting SIDD Data...')
-            shutil.unpack_archive('Datasets/val.zip', 'Datasets')
-            os.remove('Datasets/val.zip')
+def download_and_extract(id_str: str, out_zip: Path, extract_dir: Path, rename_from: str = None, rename_to: Path = None, keep_zip=False):
+    zip_path = download(id_str, out_zip)
+    extract_zip(zip_path, extract_dir)
+    if rename_from and rename_to:
+        src = extract_dir / rename_from
+        dst = rename_to
+        if dst.exists():
+            shutil.rmtree(dst)
+        src.rename(dst)
+    if not keep_zip:
+        zip_path.unlink(missing_ok=True)
 
-        if data == 'test':
-            if args.dataset == 'all' or args.dataset == 'SIDD':
-                print('SIDD Testing Data!')
-                # gdown.download(id=SIDD_test, output='Datasets/test.zip', quiet=False)
-                os.system(f'gdrive download {SIDD_test} --path Datasets/')
-                print('Extracting SIDD Data...')
-                shutil.unpack_archive('Datasets/test.zip', 'Datasets')
-                os.remove('Datasets/test.zip')
+def handle_real_train():
+    print('SIDD Training Data!')
+    dldir = Path('Datasets/Downloads')
+    ensure_dir(dldir)
+    # Train split
+    download_and_extract(
+        SIDD_train,
+        out_zip=dldir / 'train.zip',
+        extract_dir=dldir,
+        rename_from='train',  # expected folder name inside the zip
+        rename_to=dldir / 'SIDD'
+    )
+    # Val split
+    print('SIDD Validation Data!')
+    download_and_extract(
+        SIDD_val,
+        out_zip=Path('Datasets/val.zip'),
+        extract_dir=Path('Datasets')
+    )
 
-            if args.dataset == 'all' or args.dataset == 'DND':
-                print('DND Testing Data!')
-                # gdown.download(id=DND_test, output='Datasets/test.zip', quiet=False)
-                os.system(f'gdrive download {DND_test} --path Datasets/')
-                print('Extracting DND data...')
-                shutil.unpack_archive('Datasets/test.zip', 'Datasets')
-                os.remove('Datasets/test.zip')
+def handle_real_test(dataset_choice: str):
+    if dataset_choice in ('all', 'SIDD'):
+        print('SIDD Testing Data!')
+        download_and_extract(
+            SIDD_test,
+            out_zip=Path('Datasets/test.zip'),
+            extract_dir=Path('Datasets')
+        )
+    if dataset_choice in ('all', 'DND'):
+        print('DND Testing Data!')
+        download_and_extract(
+            DND_test,
+            out_zip=Path('Datasets/test.zip'),   # same name reused, zip contains different top folder
+            extract_dir=Path('Datasets')
+        )
 
-    if noise == 'gaussian':
-        if data == 'train':
-            os.makedirs(os.path.join('Datasets', 'Downloads'), exist_ok=True)
-            print('WaterlooED Training Data!')
-            # gdown.download(id=WaterlooED, output='Datasets/Downloads/WaterlooED.zip', quiet=False)
-            os.system(f'gdrive download {WaterlooED} --path Datasets/Downloads/')
-            print('Extracting WaterlooED Data...')
-            shutil.unpack_archive('Datasets/Downloads/WaterlooED.zip', 'Datasets/Downloads')
-            os.remove('Datasets/Downloads/WaterlooED.zip')
+def handle_gaussian_train():
+    dldir = Path('Datasets/Downloads')
+    ensure_dir(dldir)
 
-            print('DIV2K Training Data!')
-            # gdown.download(id=DIV2K, output='Datasets/Downloads/DIV2K.zip', quiet=False)
-            os.system(f'gdrive download {DIV2K} --path Datasets/Downloads/')
-            print('Extracting DIV2K Data...')
-            shutil.unpack_archive('Datasets/Downloads/DIV2K.zip', 'Datasets/Downloads')
-            os.remove('Datasets/Downloads/DIV2K.zip')
-            
+    print('WaterlooED Training Data!')
+    download_and_extract(
+        WaterlooED,
+        out_zip=dldir / 'WaterlooED.zip',
+        extract_dir=dldir
+    )
 
-            print('BSD400 Training Data!')
-            # gdown.download(id=BSD400, output='Datasets/Downloads/BSD400.zip', quiet=False)
-            os.system(f'gdrive download {BSD400} --path Datasets/Downloads/')
-            print('Extracting BSD400 data...')
-            shutil.unpack_archive('Datasets/Downloads/BSD400.zip', 'Datasets/Downloads')
-            os.remove('Datasets/Downloads/BSD400.zip')
-            
-            print('Flickr2K Training Data!')
-            # gdown.download(id=Flickr2K, output='Datasets/Downloads/Flickr2K.zip', quiet=False)
-            os.system(f'gdrive download {Flickr2K} --path Datasets/Downloads/')
-            print('Extracting Flickr2K data...')
-            shutil.unpack_archive('Datasets/Downloads/Flickr2K.zip', 'Datasets/Downloads')
-            os.remove('Datasets/Downloads/Flickr2K.zip')
+    print('DIV2K Training Data!')
+    download_and_extract(
+        DIV2K,
+        out_zip=dldir / 'DIV2K.zip',
+        extract_dir=dldir
+    )
 
-        if data == 'test':
-            print('Gaussian Denoising Testing Data!')
-            # gdown.download(id=gaussian_test, output='Datasets/test.zip', quiet=False)
-            os.system(f'gdrive download {gaussian_test} --path Datasets/')
-            print('Extracting Data...')
-            shutil.unpack_archive('Datasets/test.zip', 'Datasets')
-            os.remove('Datasets/test.zip')
+    print('BSD400 Training Data!')
+    download_and_extract(
+        BSD400,
+        out_zip=dldir / 'BSD400.zip',
+        extract_dir=dldir
+    )
 
-# print('Download completed successfully!')
+    print('Flickr2K Training Data!')
+    download_and_extract(
+        Flickr2K,
+        out_zip=dldir / 'Flickr2K.zip',
+        extract_dir=dldir
+    )
+
+def handle_gaussian_test():
+    print('Gaussian Denoising Testing Data!')
+    download_and_extract(
+        gaussian_test,
+        out_zip=Path('Datasets/test.zip'),
+        extract_dir=Path('Datasets')
+    )
+
+def main():
+    data_parts = args.data.split('-')
+    if args.noise == 'real':
+        if 'train' in data_parts:
+            handle_real_train()
+        if 'test' in data_parts:
+            handle_real_test(args.dataset)
+    elif args.noise == 'gaussian':
+        if 'train' in data_parts:
+            handle_gaussian_train()
+        if 'test' in data_parts:
+            handle_gaussian_test()
+    else:
+        raise ValueError("--noise must be 'real' or 'gaussian'")
+    print('Download completed successfully!')
+
+if __name__ == "__main__":
+    main()

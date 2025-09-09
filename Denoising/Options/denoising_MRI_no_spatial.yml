@@ -1,5 +1,5 @@
 # general settings
-name: train_scratch_csm_newattn
+name: train_scratch_true_mri_nospatial
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -10,21 +10,29 @@ datasets:
   train:
     name: TrainSet
     type: Dataset_OnlineGaussianDenoising
-    sigma_type: random
-    sigma_range: [55, 75]
     in_ch: 1    ## Grayscale image
-    dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/new_train_gray
+    dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/new_train_gray
     dataroot_lq: none
-    geometric_augs: true
-    noise_std_min: 0.05
-    noise_std_max: 0.10
-    whole_noise_std: 0.03
+    geometric_augs: 
+
+    # --- NEW: Option-A scaling + coil-aware sigma matching ---
+    alpha: 1.0
+    mri_stats_csv: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/percoil_noise_stats.csv
+    sigma_mode: real_only            # or "effective_complex"
+    use_same_coil_for_noise: true
+    clip_after_noise: false
+    clip_band: 1.0
+
+
+    noise_std_min: 0.00
+    noise_std_max: 0.00
+    whole_noise_std: 0.15
     smooth_times: 300
     smooth_ksize: 3
     smooth_sigma: 7.0
     random_invert_prob: 0.5
     random_add_to_smoothed_prob: 0.5
-    coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+    coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer_prv/dataset/csm.mat
     use_csm: True
 
     filename_tmpl: '{}'
@@ -40,7 +48,7 @@ datasets:
     mini_batch_sizes: [4, 4, 4, 4, 4, 4, 4]  # Align with the length of `iters`
     iters: [92000, 64000, 48000, 36000, 36000, 24000, 200000, 100000]
     gt_size: 146   # Max patch size for progressive training
-    gt_sizes: [64, 64, 64, 128, 128, 128, 64, 128]  # Align with the length of `iters`
+    gt_sizes: [64, 64, 64, 128, 128, 128, 128, 128]  # Align with the length of `iters`
     ### ------------------------------------------------------------
 
     ### ------- Training on single fixed-patch size 128x128---------
@@ -58,9 +66,18 @@ datasets:
     type: Dataset_OnlineGaussianDenoising
     sigma_test: 50
     in_ch: 1    ## Grayscale image
-    dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/test
-    coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/dataset/csm.mat
+    dataroot_gt: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer_prv/dataset/test
+    coil_sens_path: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer_prv/dataset/csm.mat
     dataroot_lq: none
+    
+    # --- NEW: keep the same scaling & σ-matching for consistency ---
+    alpha: 0.11
+    mri_stats_csv: /n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/percoil_noise_stats.csv
+    sigma_mode: real_only
+    use_same_coil_for_noise: true
+    clip_after_noise: false
+    clip_band: 1.0
+
     io_backend:
       type: disk
     noise_std_min: 0.05

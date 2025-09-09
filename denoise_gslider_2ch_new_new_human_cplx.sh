@@ -1,8 +1,8 @@
 # Paths
-MODEL_PTH="/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer_prv/experiments/train_scratch_csm_newattn_new/models/net_g_220000.pth"
-MRI_MAT="/n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/new_new_human_gslider/b1500_dwi5.mat"
+MODEL_PTH="/n/netscratch/zickler_lab/Lab/linbo/denoising_project/Restormer/experiments/train_scratch_true_mri/models/net_g_200000.pth"
+MRI_MAT="/n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/new_new_human_gslider/separate_files/b1500_dwi5.mat"
 NOISE_MAT="/n/netscratch/zickler_lab/Lab/linbo/denoising_project/dataset/new_new_human_gslider/pf1_noise_v4.mat"
-OUTPUT_DIR="results_gslider_b1500_scale_no_debais_CW_complex_globalscale_noiseimage_onlybrain"
+OUTPUT_DIR="results_b1500_truemri_newbatchsize"
 
 # Other params
 NUM_SAMPLES=1

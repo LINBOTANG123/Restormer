@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import lpips
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # --- 1) load_model (copied from your inference code) ---
 def load_model(model_path, inp_channels, device='cuda'):
@@ -54,6 +55,11 @@ def main():
     # make output dirs
     denoised_dir = os.path.join(args.output_dir, 'denoised')
     os.makedirs(denoised_dir, exist_ok=True)
+    histo_dir = os.path.join(args.output_dir, 'hists')
+    os.makedirs(histo_dir, exist_ok=True)
+
+    # (Optional) aggregate arrays across all images for one big overlay at the end
+    agg_z_true, agg_z_resid = [], []
 
     # load LPIPS (alex backbone)
     loss_lpips = lpips.LPIPS(net='alex').to(args.device)
@@ -102,6 +108,52 @@ def main():
             # out = out - bias
 
         deno = out.cpu().squeeze().numpy()  # [H,W]
+
+
+        # --- Residuals vs true noise (raw) ---
+        residual   = noisy - deno            # model residual
+        true_noise = noisy - clean           # true injected noise
+
+        # Mask out clipped pixels (optional, to avoid boundary contamination)
+        noisy_u8 = np.array(Image.open(img_path).convert('L'), dtype=np.uint8)
+        valid = (noisy_u8 > 0) & (noisy_u8 < 255)
+        r_valid = residual[valid]
+        n_valid = true_noise[valid]
+        y_valid = noisy[valid]   # add noisy input values
+
+        # Choose bin edges based on joint range
+        vals_for_edges = np.concatenate([arr for arr in (r_valid, n_valid, y_valid) if arr.size])
+        if vals_for_edges.size:
+            lo = np.percentile(vals_for_edges, 0.1)
+            hi = np.percentile(vals_for_edges, 99.9)
+            edges = np.linspace(lo, hi, 201)
+        else:
+            edges = 201
+
+        # --- Plot residual vs true noise ---
+        plt.figure(figsize=(6,4))
+        if n_valid.size:
+            plt.hist(n_valid, bins=edges, density=True, alpha=0.5, label='true noise')
+        if r_valid.size:
+            plt.hist(r_valid, bins=edges, density=True, alpha=0.5, label='residual')
+        plt.title(f"{name}: residual vs true noise")
+        plt.xlabel("intensity"); plt.ylabel("density"); plt.legend(); plt.tight_layout()
+        plt.savefig(os.path.join(histo_dir, f"hist_residual_vs_true_{name}.png"), dpi=150)
+        plt.close()
+
+        # --- Plot noisy input vs true noise (NEW) ---
+        plt.figure(figsize=(6,4))
+        if n_valid.size:
+            plt.hist(n_valid, bins=edges, density=True, alpha=0.5, label='true noise')
+        if y_valid.size:
+            plt.hist(y_valid, bins=edges, density=True, alpha=0.5, label='noisy input')
+        plt.title(f"{name}: noisy input vs true noise")
+        plt.xlabel("intensity"); plt.ylabel("density"); plt.legend(); plt.tight_layout()
+        plt.savefig(os.path.join(histo_dir, f"hist_noisy_vs_true_{name}.png"), dpi=150)
+        plt.close()
+
+
+
 
         # save PNG
         deno_img = (np.clip(deno, 0, 1) * 255).round().astype(np.uint8)

@@ -19,8 +19,6 @@ from random import randrange, uniform
 import os
 import pdb
 import scipy.io as sio
-import os
-import time
 
 class Dataset_PairedImage(data.Dataset):
     """Paired image dataset for image restoration.
@@ -198,39 +196,19 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         self.gt_size = opt.get('gt_size', 146)
         self.geometric_augs = opt.get('geometric_augs', True) if self.phase == 'train' else False
 
-        # --- NEW: Option A scaling into MRI band ---
-        # Alpha rescales your [0,1] natural images into the MRI numeric band (you said "remember Option A").
-        # Set, e.g., alpha=0.2 to roughly match MRI spread.
-        self.alpha = float(opt.get('alpha', 1.0))  # 1.0 keeps old behavior
-
-        # --- NEW: Coil-noise matching controls ---
-        # Path to CSV with columns: coil,mu_R,sig_R,mu_I,sig_I
-        self.mri_stats_csv = opt.get('mri_stats_csv', None)
-        # Choose which sigma to match:
-        #   'real_only' -> use sig_R[k]
-        #   'effective_complex' -> use sqrt((sig_R[k]^2 + sig_I[k]^2)/2)
-        self.sigma_mode = opt.get('sigma_mode', 'real_only')
-        # If True, use the SAME coil index for CSM and for noise statistics; else sample another
-        self.use_same_coil_for_noise = bool(opt.get('use_same_coil_for_noise', True))
-
-        # Whether to clip after adding noise (MRI complex data is signed; default False)
-        self.clip_after_noise = bool(opt.get('clip_after_noise', False))
-        # If clipping, clip to this symmetric band
-        self.clip_band = float(opt.get('clip_band', 1.0))  # clip to [-clip_band, +clip_band]
-
         # Smoothing parameters.
         self.smooth_times = opt.get('smooth_times', 5)
         self.smooth_ksize = opt.get('smooth_ksize', 3)
         self.smooth_sigma = opt.get('smooth_sigma', 1.0)
 
-        # Noise standard deviation range. (We will normalize to match coil sigma; these shape the spatial map.)
+        # Noise standard deviation range.
         self.noise_std_min = opt.get('noise_std_min', 0.50)
         self.noise_std_max = opt.get('noise_std_max', 0.70)
 
-        # Whole-image noise constant (part of the spatial std map before normalization).
+        # Whole-image noise constant.
         self.whole_noise_std = opt.get('whole_noise_std', 0.01)
 
-        # Probability to invert intensities for building spatial map.
+        # Probability to invert intensities.
         self.random_invert_prob = opt.get('random_invert_prob', 0.5)
 
         # Multi-coil simulation parameters.
@@ -242,15 +220,6 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         self.io_backend_opt = opt['io_backend']
         self.gt_folder = opt['dataroot_gt']
         self.file_client = None
-
-        # ---- Stats logging (log once per run) ----
-        # Where to write the one-time stats log (configurable via opt)
-        self.stats_log_path = opt.get(
-            'stats_log_path',
-            os.path.join(os.path.dirname(self.gt_folder), 'scaling_noise_stats.log')
-        )
-        # If the file already exists, assume someone has logged it; else we will log once.
-        self._stats_logged = os.path.exists(self.stats_log_path)
 
         # Gather GT image paths.
         self.paths = sorted(list(self._scandir(self.gt_folder)))
@@ -270,59 +239,6 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         self.num_coils = num_coils
         self.num_versions = num_versions
 
-        # --- NEW: Load pure-noise coil statistics (sigma_real/sigma_imag) ---
-        if self.mri_stats_csv is not None:
-            data = np.genfromtxt(self.mri_stats_csv, delimiter=',', names=True)
-
-            if data.dtype.names is None:
-                raise ValueError(
-                    f"mri_stats_csv '{self.mri_stats_csv}' must include a header with named columns "
-                    "(expected: coil,sigma_real,sigma_imag)."
-                )
-
-            # Normalize column names (handle minor variations)
-            names = {n.lower(): n for n in data.dtype.names}
-            required = ['coil', 'sigma_real', 'sigma_imag']
-            for col in required:
-                if col not in names:
-                    raise ValueError(
-                        f"CSV missing required column '{col}'. Found columns: {list(data.dtype.names)}"
-                    )
-
-            # Extract arrays
-            coil_idx   = np.asarray(data[names['coil']], dtype=np.float32)
-            sigma_real = np.asarray(data[names['sigma_real']], dtype=np.float32)
-            sigma_imag = np.asarray(data[names['sigma_imag']], dtype=np.float32)
-
-            # Truncate / align to CSM coil count if needed
-            if sigma_real.size != self.num_coils or sigma_imag.size != self.num_coils:
-                print(f"[WARN] CSV coil count ({sigma_real.size}) != CSM coil count ({self.num_coils}); "
-                    f"proceeding with min length.")
-                minC = int(min(sigma_real.size, sigma_imag.size, self.num_coils))
-                coil_idx   = coil_idx[:minC]
-                sigma_real = sigma_real[:minC]
-                sigma_imag = sigma_imag[:minC]
-                self.num_coils = minC  # keep consistency with CSM usage
-
-            # Store as "R/I" for downstream code compatibility
-            self.sig_R = sigma_real.astype(np.float32)
-            self.sig_I = sigma_imag.astype(np.float32)
-
-            # Choose which sigma to match during noise injection
-            if self.sigma_mode == 'effective_complex':
-                # RMS combine real/imag (good if approximating complex with a single real channel)
-                self.sig_eff = np.sqrt((self.sig_R**2 + self.sig_I**2) / 2.0).astype(np.float32)
-            elif self.sigma_mode == 'real_only':
-                self.sig_eff = self.sig_R.astype(np.float32)
-            else:
-                raise ValueError(f"Unsupported sigma_mode '{self.sigma_mode}'. "
-                                f"Use 'real_only' or 'effective_complex'.")
-        else:
-            print("[INFO] mri_stats_csv not provided; coil sigma matching will be skipped (keeps old behavior).")
-            self.sig_R = self.sig_I = self.sig_eff = None
-
-
-
     def __getitem__(self, index):
         if self.file_client is None:
             from basicsr.utils import FileClient  # or your FileClient module
@@ -339,19 +255,17 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
         img_gt = self._crop_to_csm_size(img_gt, self.gt_size)
         if self.phase == 'train' and self.geometric_augs:
             img_gt, = random_augmentation(img_gt)
-        # Normalize to [0,1]
         if img_gt.max() > 1.0:
             img_gt = img_gt / 255.0
         else:
             img_gt = np.clip(img_gt, 0, 1.0)
         img_gt = np.squeeze(img_gt, axis=2)  # shape: (H, W)
-
-        # --- REMOVE/REPLACE intensity offset; we want consistent scaling into MRI band ---
-        # *** Option A scaling: bring natural images into MRI numeric band ***
-        if self.alpha != 1.0:
-            img_gt = img_gt * self.alpha
-        # NOTE: do not clip back to [0,1] after scaling; we want signed/narrow MRI-like range later.
         H, W = img_gt.shape
+
+        # *** Change intensity by adding a random offset ***
+        offset_range = self.opt.get('intensity_offset_range', 0.0)  # can be adjusted as needed
+        intensity_offset = random.uniform(-offset_range, offset_range)
+        img_gt = np.clip(img_gt + intensity_offset, 0, 1.0)
 
         # --- Generate clean coil image for target coil using the CSM ---
         # Use a random version from the sensitivity map.
@@ -372,127 +286,51 @@ class Dataset_OnlineGaussianDenoising(torch.utils.data.Dataset):
             sigma=self.smooth_sigma,
             times=self.smooth_times
         )
-        coil_smoothed = np.clip(coil_smoothed, 0, None)  # nonnegative map for std shaping
+        coil_smoothed = np.clip(coil_smoothed, 0, 1)
         if random.random() < self.random_invert_prob:
-            # keep nonnegative by inverting around its max (or 1.0 if you prefer)
-            # Here we invert with max=coil_smoothed.max() to avoid negatives:
-            inv_base = coil_smoothed.max() if coil_smoothed.size > 0 else 1.0
-            coil_smoothed = np.clip(inv_base - coil_smoothed, 0, None)
+            coil_smoothed = 1.0 - coil_smoothed
 
-        # Spatial heteroscedasticity before normalization
+        # spatial (CSM‐dependent) std
         noise_std = random.uniform(self.noise_std_min, self.noise_std_max)
-        spatial_map = coil_smoothed * noise_std  # shape (H,W), >=0
+        spatial_map = coil_smoothed * noise_std
 
-        # Whole-volume (global) std baseline
-        global_std = float(self.whole_noise_std)
+        # whole‐volume (global) std
+        global_std = self.whole_noise_std
 
-        # Base std map before normalization
-        std_map_base = np.sqrt(spatial_map**2 + global_std**2).astype(np.float32)  # (H,W)
+        # combined std map
+        noise_map = np.sqrt(spatial_map**2 + global_std**2)
 
-        # --- NEW: Normalize std map RMS to coil sigma ---
-        if self.sig_eff is not None:
-            if self.use_same_coil_for_noise:
-                k_noise = target_coil
-            else:
-                k_noise = random.randint(0, self.num_coils - 1)
-            sigma_coil = float(self.sig_eff[k_noise])  # scalar target sigma for this sample
+        # actual noise realizations
+        smoothing_noise = np.random.randn(H, W).astype(np.float32) * spatial_map
+        whole_noise     = np.random.randn(H, W).astype(np.float32) * global_std
 
-            # RMS of base map
-            rms_base = float(np.sqrt(np.mean(std_map_base**2)) + 1e-12)
-            scale_std = sigma_coil / rms_base
-            std_map = (std_map_base * scale_std).astype(np.float32)
-        else:
-            # No CSV provided: keep your old behavior
-            std_map = std_map_base
+        # >>> ADD: keep the true injected noise and mark unclipped pixels
+        true_noise_preclip = (smoothing_noise + whole_noise).astype(np.float32)
+        preclip = clean_coil + true_noise_preclip
+        valid_mask = (preclip >= 0.0) & (preclip <= 1.0)
 
-        # --- Draw actual noise realization (zero-mean) ---
-        smoothing_noise = np.random.randn(H, W).astype(np.float32) * std_map
-        # If you want to keep a tiny independent whole_noise term, it's already embedded in std_map_base; no need to add twice.
-        true_noise = smoothing_noise  # (H,W), signed
-
-        # Noisy input (NO clipping by default)
-        pre = clean_coil + true_noise
-        if self.clip_after_noise:
-            low, high = -self.clip_band, self.clip_band
-            noisy_coil = np.clip(pre, low, high).astype(np.float32)
-        else:
-            noisy_coil = pre.astype(np.float32)
-
-        # ---- One-time logging of scaled intensity + scaled noise stats ----
-        if not self._stats_logged:
-            try:
-                os.makedirs(os.path.dirname(self.stats_log_path), exist_ok=True)
-
-                # Clean (scaled) intensity stats (after alpha + CSM)
-                intensity_mean = float(np.mean(clean_coil))
-                intensity_std  = float(np.std(clean_coil))
-
-                # Scaled noise stats (the actual injected noise)
-                noise_mean = float(np.mean(true_noise))
-                noise_std  = float(np.std(true_noise))
-
-                # Optional context for reproducibility
-                ts = time.strftime('%Y-%m-%d %H:%M:%S')
-                coil_info = f"coil_idx={int(target_coil)}"
-                if self.sig_eff is not None:
-                    # If you used a separate noise coil index, include it; else reuse target_coil.
-                    try:
-                        coil_info += f", coil_idx_noise={int(k_noise)}, sigma_coil={float(sigma_coil):.6g}"
-                    except NameError:
-                        coil_info += f", coil_idx_noise={int(target_coil)}, sigma_coil={float(self.sig_eff[target_coil]):.6g}"
-
-                with open(self.stats_log_path, 'a') as f:
-                    f.write(
-                        "[One-time stats]\n"
-                        f"timestamp: {ts}\n"
-                        f"{coil_info}\n"
-                        f"alpha: {float(self.alpha):.6g}\n"
-                        f"clean_intensity_mean: {intensity_mean:.6g}\n"
-                        f"clean_intensity_std:  {intensity_std:.6g}\n"
-                        f"noise_mean:           {noise_mean:.6g}\n"
-                        f"noise_std:            {noise_std:.6g}\n"
-                        "----\n"
-                    )
-
-                # Mark as logged so we won’t log again
-                self._stats_logged = True
-            except Exception as e:
-                # Non-fatal: continue training even if logging fails
-                print(f"[WARN] Failed to write one-time stats log at '{self.stats_log_path}': {e}")
-
+        # add them (this is the actual input to the model)
+        noisy_coil = np.clip(preclip, 0, 1)
 
         # --- Form Input and GT ---
-        lq = np.stack([noisy_coil, std_map], axis=0)  # (2,H,W): [noisy, std_map]
+        lq = np.stack([noisy_coil, noise_map], axis=0)
         gt_final = clean_coil
 
         # --- Convert to torch tensors ---
         lq_tensor = torch.from_numpy(lq).float()
         gt_tensor = torch.from_numpy(gt_final).float().unsqueeze(0)
 
-        ret = {
-            'lq': lq_tensor,                    # (2,H,W): [noisy, std_map actually used]
-            'gt': gt_tensor,                    # (1,H,W): clean coil (Option A scaled, CSM applied)
+        # >>> ADD these three fields to the return dict
+        return {
+            'lq': lq_tensor,                    # (2,H,W): [noisy, noise_map]
+            'gt': gt_tensor,                    # (1,H,W): clean coil
             'lq_path': gt_path,
             'gt_path': gt_path,
-            'std_map': torch.from_numpy(std_map).float().unsqueeze(0),   # (1,H,W)
-            'true_noise': torch.from_numpy(true_noise).float().unsqueeze(0),  # (1,H,W), signed
-            'coil_idx': int(target_coil),
-            'alpha': float(self.alpha),
-            'clip_after_noise': bool(self.clip_after_noise),
+            'noise_std': noise_std,
+            'true_noise': torch.from_numpy(true_noise_preclip).float().unsqueeze(0),  # (1,H,W)
+            'valid_mask': torch.from_numpy(valid_mask.astype(np.bool_)).unsqueeze(0), # (1,H,W), bool
+            'std_map': torch.from_numpy(noise_map).float().unsqueeze(0),              # (1,H,W)
         }
-
-        # Include noise coil & sigma when available
-        if self.sig_eff is not None:
-            ret['sigma_mode'] = self.sigma_mode
-            if self.use_same_coil_for_noise:
-                ret['coil_idx_noise'] = int(target_coil)
-                ret['sigma_coil'] = float(self.sig_eff[target_coil])
-            else:
-                ret['coil_idx_noise'] = int(k_noise)
-                ret['sigma_coil'] = float(self.sig_eff[k_noise])
-
-        return ret
-
     
     def __len__(self):
         return len(self.paths)

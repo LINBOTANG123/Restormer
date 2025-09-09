@@ -15,6 +15,40 @@ from utils.noise_loader import load_noise_data, replicate_noise_map_with_samplin
 
 NUM_COILS = 32  # adjust if needed
 
+# === PLOT HELPERS (model-scale, masked) =======================================
+def _masked_vals(arr, mask=None):
+    if mask is None:
+        return arr.reshape(-1)
+    return arr[mask].reshape(-1)
+
+def plot_hist_overlay(data_a, data_b, mask, title, label_a, label_b, out_png,
+                      bins=100, xlim=None, logy=False):
+    """
+    Overlays normalized histograms of two arrays on model scale.
+    data_a/data_b shape can be (...), mask is broadcastable boolean of same spatial dims.
+    """
+    import matplotlib.pyplot as plt
+    va = _masked_vals(data_a, mask)
+    vb = _masked_vals(data_b, mask)
+    va = va[np.isfinite(va)]
+    vb = vb[np.isfinite(vb)]
+
+    plt.figure(figsize=(5,4), dpi=140)
+    plt.hist(va, bins=bins, density=True, alpha=0.5, label=label_a)
+    plt.hist(vb, bins=bins, density=True, alpha=0.5, label=label_b)
+    if xlim is not None:
+        plt.xlim(xlim)
+    if logy:
+        plt.yscale('log')
+    plt.title(title)
+    plt.xlabel('Intensity (model scale)')
+    plt.ylabel('Density')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_png)
+    plt.close()
+
+
 def load_model(model_path: str, inp_channels: int, device: str='cuda') -> torch.nn.Module:
     """
     Load the multi-coil Restormer model with dynamic input channels.
@@ -140,6 +174,7 @@ def main():
 
         # CHANGE: rotate noise map Clockwise 90 degrees
         noise_maps = np.rot90(noise_maps, k=3, axes=(0, 1)).copy()
+        noise_scaled = np.clip(noise_maps * scale_factor, 0, 1).astype(np.float32)
 
         # collapse to 2D per coil
         print("NOISE MAP min: ", noise_maps.min(), "max: ", noise_maps.max(),  "mean: ", np.mean(noise_maps), "std", np.std(noise_maps))
@@ -185,7 +220,7 @@ def main():
                                                   sigma=SMOOTH_SIGMA, mode='nearest')
 
         # Scale to model’s input units and (optionally) clip
-        noise_norm = noise_norm * scale_factor * 1.8
+        noise_norm = noise_norm * scale_factor
         noise_norm = np.clip(noise_norm, 0, 1)
         # ------------------------------------------------------------
 
@@ -283,6 +318,42 @@ def main():
 
         # Signed residual at coil-combined level (still in SCALED units)
         residual_cc = orig_cc - deno_cc
+        # --- PLOTTING: coil-level and coil-combined overlays (model scale) ------------
+        # Build masks for plotting (broadcasted)
+        mask_3d = mask.astype(bool) if mask is not None else None          # (H,W,S)
+
+        # 1) COIL-LEVEL overlay: residual vs pure noise (aggregate across slices & coils)
+        #    res_vol: (H, W, C, S)  [model scale]
+        #    noise_scaled: (H, W, C, S)  [model scale]
+        if args.use_noise and noise_scaled is not None:
+            # Match shapes: both are (H,W,C,S). Mask needs to be (H,W,S) -> broadcast.
+            plot_hist_overlay(
+                data_a=res_vol,                      # residual per coil
+                data_b=noise_scaled,                 # pure noise per coil
+                mask=mask_3d[..., None],             # broadcast to (H,W,S,1) then to (H,W,C,S)
+                title=f'Coil-level: Residual vs Noise (sample {sid})',
+                label_a='Residual (coil)',
+                label_b='Noise (coil)',
+                out_png=os.path.join(args.output_folder, f'overlay_coil_res_vs_noise_sample{sid+1}.png'),
+                bins=120, xlim=None, logy=True
+            )
+
+        # 2) COIL-COMBINED overlay: residual vs pure noise (RSS over coils)
+        #    residual_cc: (H, W, S)  [model scale]
+        #    Build noise coil-combined: RSS across coils at each slice
+        if args.use_noise and noise_scaled is not None:
+            noise_cc = np.sqrt((noise_scaled**2).sum(axis=2))               # (H,W,S)
+            plot_hist_overlay(
+                data_a=residual_cc,
+                data_b=noise_cc,
+                mask=mask_3d,
+                title=f'Coil-combined: Residual vs Noise (sample {sid})',
+                label_a='Residual (coil-combined)',
+                label_b='Noise (coil-combined)',
+                out_png=os.path.join(args.output_folder, f'overlay_cc_res_vs_noise_sample{sid+1}.png'),
+                bins=120, xlim=None, logy=True
+            )
+
 
         all_deno.append(deno_cc)
         all_res.append(residual_cc)
